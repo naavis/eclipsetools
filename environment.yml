@@ -9,3 +9,4 @@ dependencies:
   - scikit-image=0.25.2
   - numpy=2.2.6
   - opencv=4.11.0
+  - pytest=8.4.0
