@@ -26,6 +26,7 @@ def main(args):
     moon = utils.circlefinder.find_circle(image, min_radius=300, max_radius=700)
 
     window_mask = preprocessing.masking.hann_window_mask(image.shape)
+    # TODO: The moon mask radius should be parametrized, so it is larger for more over-exposed images
     moon_mask = preprocessing.masking.circle_mask(image, moon.center, 1.4 * moon.radius)
     mask = window_mask * moon_mask
 
