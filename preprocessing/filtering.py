@@ -1,10 +1,11 @@
 import numpy as np
 import cv2
 
+
 def rotational_blur(
-    image: np.ndarray,
-    max_angle: float,
-    center: tuple) -> np.ndarray:
+        image: np.ndarray,
+        max_angle: float,
+        center: tuple) -> np.ndarray:
     """    Apply a rotational blur to a grayscale image using polar coordinates.
     Parameters:
         image (np.ndarray): Input grayscale image (2D array).

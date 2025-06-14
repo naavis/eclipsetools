@@ -6,6 +6,7 @@ from scipy.signal.windows import hann
 def hann_window_mask(shape: tuple) -> np.ndarray:
     return np.outer(hann(shape[0]), hann(shape[1]))
 
+
 def circle_mask(image: np.ndarray,
                 mask_center: tuple,
                 mask_radius: float) -> np.ndarray:
@@ -22,4 +23,3 @@ def circle_mask(image: np.ndarray,
         sigmaX=mask.shape[0] / 100,
         sigmaY=mask.shape[0] / 100)
     return mask
-

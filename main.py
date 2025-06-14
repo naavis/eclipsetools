@@ -1,12 +1,12 @@
 import sys
 
+import matplotlib.pyplot as plt
+import numpy as np
+import rawpy
+
 import preprocessing.filtering
 import preprocessing.masking
 import utils.circlefinder
-import rawpy
-import numpy as np
-
-import matplotlib.pyplot as plt
 
 
 def open_raw_image(path: str) -> np.ndarray:
