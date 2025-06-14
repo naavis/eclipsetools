@@ -20,23 +20,25 @@ def open_raw_image(path: str) -> np.ndarray:
                 output_color=rawpy.ColorSpace.raw,
                 no_auto_bright=True)) / 65535.0
 
+
 def main(args):
     image = np.mean(open_raw_image(args[1]), axis=2)
 
-    moon = utils.circlefinder.find_circle(image, min_radius=300, max_radius=700)
-
-    window_mask = preprocessing.masking.hann_window_mask(image.shape)
-    # TODO: The moon mask radius should be parametrized, so it is larger for more over-exposed images
-    moon_mask = preprocessing.masking.circle_mask(image, moon.center, 1.4 * moon.radius)
-    mask = window_mask * moon_mask
-
-    filtered_image = image - preprocessing.filtering.rotational_blur(image, max_angle=2, center=moon.center)
-
-    image_for_alignment = mask * filtered_image
+    image_for_alignment = preprocess(image)
     plt.imshow(image_for_alignment, cmap='gray')
     plt.title('Image ready for phase-correlation registration')
     plt.show()
 
+
+def preprocess(image):
+    moon = utils.circlefinder.find_circle(image, min_radius=300, max_radius=700)
+    window_mask = preprocessing.masking.hann_window_mask(image.shape)
+    # TODO: The moon mask radius should be parametrized, so it is larger for more over-exposed images
+    moon_mask = preprocessing.masking.circle_mask(image, moon.center, 1.4 * moon.radius)
+    mask = window_mask * moon_mask
+    filtered_image = image - preprocessing.filtering.rotational_blur(image, max_angle=2, center=moon.center)
+    image_for_alignment = mask * filtered_image
+    return image_for_alignment
 
 
 if __name__ == '__main__':
