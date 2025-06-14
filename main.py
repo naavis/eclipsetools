@@ -44,7 +44,7 @@ def main(args):
 
 
 def estimate_saturated_radius(moon_params: DetectedCircle, raw_image: np.ndarray) -> float | None:
-    saturated_pixels = scipy.ndimage.median_filter(np.max(raw_image, axis=2), size=5) > 0.999
+    saturated_pixels = scipy.ndimage.median_filter(np.max(raw_image, axis=2), size=3) > 0.999
     saturated_radius = None
     if np.any(saturated_pixels):
         distances = np.linalg.norm(np.argwhere(saturated_pixels) - moon_params.center, axis=1)
