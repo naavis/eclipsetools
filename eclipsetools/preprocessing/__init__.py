@@ -3,26 +3,16 @@ import numpy as np
 
 import eclipsetools.preprocessing.filtering
 import eclipsetools.preprocessing.masking
-import eclipsetools.utils.circlefinder
+import eclipsetools.utils.circle_finder
 
 
 def preprocess_for_alignment(rgb_image):
     image = np.mean(rgb_image, axis=2)
-    moon = eclipsetools.utils.circlefinder.find_circle(image, min_radius=400, max_radius=700)
+    moon = eclipsetools.utils.circle_finder.find_circle(image, min_radius=400, max_radius=700)
     assert moon is not None
-    saturated_radius = estimate_saturated_radius(moon, rgb_image)
+    saturated_radius = eclipsetools.preprocessing.masking.estimate_saturated_radius(moon, rgb_image)
     moon_mask_radius = 1.2 * (saturated_radius if saturated_radius else moon.radius)
     return mask_and_filter(image, moon.center, moon_mask_radius)
-
-
-def estimate_saturated_radius(moon_params: eclipsetools.utils.circlefinder.DetectedCircle,
-                              raw_image: np.ndarray) -> float | None:
-    saturated_pixels = cv2.erode(np.max(raw_image, axis=2), kernel=np.ones((3, 3), np.float32), iterations=1) > 0.999
-    saturated_radius = None
-    if np.any(saturated_pixels):
-        distances = np.linalg.norm(np.argwhere(saturated_pixels) - moon_params.center, axis=1)
-        saturated_radius = np.max(distances)
-    return saturated_radius
 
 
 def mask_and_filter(image: np.ndarray, moon_center: tuple, moon_mask_radius: float) -> np.ndarray:

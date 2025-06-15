@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from scipy.signal.windows import hann
 
+from eclipsetools.utils.circle_finder import DetectedCircle
+
 
 def hann_window_mask(shape: tuple) -> np.ndarray:
     return np.outer(hann(shape[0]), hann(shape[1]))
@@ -23,3 +25,13 @@ def circle_mask(shape: np.ndarray,
         sigmaX=10,
         sigmaY=10)
     return mask
+
+
+def estimate_saturated_radius(moon_params: DetectedCircle,
+                              raw_image: np.ndarray) -> float | None:
+    saturated_pixels = cv2.erode(np.max(raw_image, axis=2), kernel=np.ones((3, 3), np.float32), iterations=1) > 0.999
+    saturated_radius = None
+    if np.any(saturated_pixels):
+        distances = np.linalg.norm(np.argwhere(saturated_pixels) - moon_params.center, axis=1)
+        saturated_radius = np.max(distances)
+    return saturated_radius
