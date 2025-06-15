@@ -4,7 +4,7 @@ import numpy as np
 def find_translation(ref_image, image, low_pass_sigma=0.11):
     fft1 = np.fft.fft2(ref_image)
     fft2 = np.fft.fft2(image)
-    offset = 0.01
+    offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
     gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
