@@ -8,8 +8,8 @@ def find_translation(ref_image, image):
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
     # TODO: The sigma parameter Gaussian weighting should be adjustable
-    sigma = 0.1 * cross_power_spectrum.shape[1]
-    gaussian_weighting = np.exp(-0.5 * np.sum(np.square(np.indices(cross_power_spectrum.shape)), axis=0) / (sigma ** 2))
+    sigma = 0.01 * cross_power_spectrum.shape[1]
+    gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, sigma)
 
     phase_correlation = np.real(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
     peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
@@ -17,11 +17,20 @@ def find_translation(ref_image, image):
     peak = _center_of_mass(phase_correlation, peak, 2)
 
     # Upper half of each axis represents negative translations
-    thresholds = np.array(ref_image.shape[:1]) // 2
-    subtractions = np.array(ref_image.shape[:1])
+    thresholds = np.array(ref_image.shape[:2]) // 2
+    subtractions = np.array(ref_image.shape[:2])
     peak = np.where(peak > thresholds, peak - subtractions, peak)
 
     return -peak
+
+
+def _gaussian_weights(shape, sigma):
+    fy = np.fft.fftfreq(shape[1])
+    fx = np.fft.fftfreq(shape[0])
+    fy_grid, fx_grid = np.meshgrid(fy, fx)
+    freq_squared = fy_grid ** 2 + fx_grid ** 2
+    gaussian_weighting = np.exp(-0.5 * freq_squared / (sigma ** 2))
+    return gaussian_weighting
 
 
 def _center_of_mass(image, center_point, window_size):
