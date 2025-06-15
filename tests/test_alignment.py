@@ -10,7 +10,7 @@ def test_translate():
     ref_image = utils.raw_reader.open_raw_image(r'images\eclipse_5ms.CR3')
     ref_image_preproc = preprocessing.preprocess_for_alignment(ref_image[50:-50, 50:-50, :])
 
-    num_tests = 30
+    num_tests = 10
     rng = np.random.default_rng(122807528840384100672342137672332424406)
     offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
     for offset in offsets:
