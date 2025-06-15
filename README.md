@@ -1,4 +1,4 @@
-# Advanced Eclipse Master 2000
+# Solar Eclipse Toolkit
 
 Toolkit for aligning and processing total solar eclipse photographs.
 
