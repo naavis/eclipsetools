@@ -1,11 +1,13 @@
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
 
 
+@dataclass
 class DetectedCircle:
-    def __init__(self, x, y, radius):
-        self.center = (x, y)
-        self.radius = radius
+    center: tuple
+    radius: float
 
 
 def find_circle(
@@ -28,7 +30,7 @@ def find_circle(
         # plot_circles(detected_circles, image)
 
         circle = detected_circles[0][0]
-        return DetectedCircle(circle[1], circle[0], circle[2])
+        return DetectedCircle(center=(circle[1], circle[0]), radius=float(circle[2]))
     else:
         return None
 
