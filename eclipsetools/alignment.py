@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def find_translation(ref_image, image, low_pass_sigma=0.11):
+def find_translation(ref_image, image, low_pass_sigma):
     """
     Find the translation between two images using phase correlation.
     :param ref_image: Reference image to align against
