@@ -1,4 +1,4 @@
-name: EclipseMaster2000
+name: eclipsetools
 channels:
   - conda-forge
   - defaults
