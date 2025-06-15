@@ -27,7 +27,7 @@ def find_circle(
         maxRadius=max_radius)
 
     if detected_circles is not None:
-        # plot_circles(detected_circles, image)
+        # _plot_circles(detected_circles, image)
 
         circle = detected_circles[0][0]
         return DetectedCircle(center=(circle[1], circle[0]), radius=float(circle[2]))
@@ -35,7 +35,7 @@ def find_circle(
         return None
 
 
-def plot_circles(detected_circles, image):
+def _plot_circles(detected_circles, image):
     print(f'Found {detected_circles.shape[1]} circles')
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle
