@@ -1,15 +1,13 @@
 import numpy as np
 
 
-def find_translation(ref_image, image):
+def find_translation(ref_image, image, low_pass_sigma=0.11):
     fft1 = np.fft.fft2(ref_image)
     fft2 = np.fft.fft2(image)
     offset = 0.01
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
-    # TODO: The sigma parameter Gaussian weighting should be adjustable
-    sigma = 0.00002 * cross_power_spectrum.shape[1]
-    gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, sigma)
+    gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
 
     phase_correlation = np.real(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
 
