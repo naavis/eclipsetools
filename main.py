@@ -19,7 +19,7 @@ def align_single_image(reference_image, image_path):
     Returns:
         tuple: (image_path, translation_result)
     """
-    image_to_align = preprocess_for_alignment(open_raw_image(image_path).data)
+    image_to_align = preprocess_for_alignment(open_raw_image(image_path))
     translation = find_translation(reference_image, image_to_align)
     return image_path, translation
 
@@ -53,7 +53,7 @@ def main(reference_image, images_to_align, n_jobs):
         click.echo("Error: No valid image files found to align", err=True)
         return
 
-    ref_image = preprocess_for_alignment(open_raw_image(reference_image).data)
+    ref_image = preprocess_for_alignment(open_raw_image(reference_image))
 
     click.echo(f"Processing {len(expanded_image_paths)} images...")
 
