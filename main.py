@@ -1,14 +1,13 @@
 import sys
 
-import alignment
-import utils.circlefinder
-import utils.raw_reader
-from preprocessing import preprocess_for_alignment
+import eclipsetools.utils.raw_reader
+from eclipsetools import alignment, utils
+from eclipsetools.preprocessing import preprocess_for_alignment
 
 
 def main(args):
-    ref_image = preprocess_for_alignment(utils.raw_reader.open_raw_image(args[1]))
-    image_to_align = preprocess_for_alignment(utils.raw_reader.open_raw_image(args[2]))
+    ref_image = preprocess_for_alignment(eclipsetools.utils.raw_reader.open_raw_image(args[1]))
+    image_to_align = preprocess_for_alignment(eclipsetools.utils.raw_reader.open_raw_image(args[2]))
     print(alignment.find_translation(ref_image, image_to_align))
 
 

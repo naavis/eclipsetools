@@ -2,13 +2,13 @@ import cv2
 import joblib
 import numpy as np
 
-import preprocessing
-import utils.raw_reader
-from alignment import find_translation
+from eclipsetools import preprocessing
+from eclipsetools.alignment import find_translation
+from eclipsetools.utils.raw_reader import open_raw_image
 
 
 def test_translate():
-    ref_image = utils.raw_reader.open_raw_image(r'images\eclipse_5ms.CR3')
+    ref_image = open_raw_image(r'images\eclipse_5ms.CR3')
     ref_image_preproc = preprocessing.preprocess_for_alignment(ref_image[50:-50, 50:-50, :])
 
     num_tests = 10
