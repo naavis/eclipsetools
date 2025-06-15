@@ -8,7 +8,7 @@ from eclipsetools.utils.raw_reader import open_raw_image
 
 
 def test_translate():
-    ref_image = open_raw_image(r'images\eclipse_5ms.CR3')
+    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3').data
     ref_image_preproc = preprocessing.preprocess_for_alignment(ref_image[50:-50, 50:-50, :])
 
     num_tests = 10
