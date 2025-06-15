@@ -6,8 +6,12 @@ def find_translation(ref_image, image):
     fft2 = np.fft.fft2(image)
     offset = 0.01
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
-    # TODO: Do Gaussian weighting on cross power spectrum like Druckmüller suggests
-    phase_correlation = np.real(np.fft.ifft2(cross_power_spectrum))
+
+    # TODO: The sigma parameter Gaussian weighting should be adjustable
+    sigma = 0.1 * cross_power_spectrum.shape[1]
+    gaussian_weighting = np.exp(-0.5 * np.sum(np.square(np.indices(cross_power_spectrum.shape)), axis=0) / (sigma ** 2))
+
+    phase_correlation = np.real(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
     peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
 
     peak = _center_of_mass(phase_correlation, peak, 2)
