@@ -8,20 +8,20 @@ def find_translation(ref_image, image):
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
     # TODO: The sigma parameter Gaussian weighting should be adjustable
-    sigma = 0.01 * cross_power_spectrum.shape[1]
+    sigma = 0.00002 * cross_power_spectrum.shape[1]
     gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, sigma)
 
     phase_correlation = np.real(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
-    peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
 
-    peak = _center_of_mass(phase_correlation, peak, 2)
+    initial_peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
+    subpixel_peak = _center_of_mass(phase_correlation, initial_peak, 4)
 
     # Upper half of each axis represents negative translations
-    thresholds = np.array(ref_image.shape[:2]) // 2
-    subtractions = np.array(ref_image.shape[:2])
-    peak = np.where(peak > thresholds, peak - subtractions, peak)
+    thresholds = np.array(phase_correlation.shape[:2]) // 2
+    subtractions = np.array(phase_correlation.shape[:2])
+    subpixel_peak = np.where(subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak)
 
-    return -peak
+    return -subpixel_peak
 
 
 def _gaussian_weights(shape, sigma):
