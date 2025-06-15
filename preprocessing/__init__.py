@@ -1,8 +1,8 @@
+import cv2
 import numpy as np
-import scipy
 
-import preprocessing.masking
 import preprocessing.filtering
+import preprocessing.masking
 import utils.circlefinder
 
 
@@ -16,7 +16,7 @@ def preprocess_for_alignment(rgb_image):
 
 
 def estimate_saturated_radius(moon_params: utils.circlefinder.DetectedCircle, raw_image: np.ndarray) -> float | None:
-    saturated_pixels = scipy.ndimage.median_filter(np.max(raw_image, axis=2), size=3) > 0.999
+    saturated_pixels = cv2.erode(np.max(raw_image, axis=2), kernel=np.ones((3, 3), np.float32), iterations=1) > 0.999
     saturated_radius = None
     if np.any(saturated_pixels):
         distances = np.linalg.norm(np.argwhere(saturated_pixels) - moon_params.center, axis=1)
