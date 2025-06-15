@@ -1,4 +1,5 @@
 import cv2
+import joblib
 import numpy as np
 
 import preprocessing
@@ -13,24 +14,31 @@ def test_translate():
     num_tests = 10
     rng = np.random.default_rng(122807528840384100672342137672332424406)
     offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
-    for offset in offsets:
-        offset_y, offset_x = offset
+    # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
+    noise_image = rng.normal(0.0, 0.01, ref_image.shape)
+    errors = joblib.Parallel(n_jobs=32, prefer='threads')(
+        joblib.delayed(align_test_image)(ref_image, ref_image_preproc, offset, noise_image) for offset in offsets)
 
-        translation_matrix = np.array([
-            [1, 0, offset_x],
-            [0, 1, offset_y]
-        ], dtype=np.float32)
-        translated_image = cv2.warpAffine(
-            ref_image,
-            translation_matrix,
-            dsize=(ref_image.shape[1], ref_image.shape[0]))
-
-        # We add some Gaussian noise to the translated image to simulate varying noise in real images
-        translated_image = np.clip(translated_image + rng.normal(0.0, 0.01, translated_image.shape), 0.0, 1.0)
-
-        translated_image_preproc = preprocessing.preprocess_for_alignment(translated_image[50:-50, 50:-50, :])
-        found_translation = find_translation(ref_image_preproc, translated_image_preproc)
-
-        error = np.sqrt(np.sum(np.square(found_translation - offset)))
-        print(f"Total error for offset x: {offset_x}, y: {offset_y} is {error}")
+    for error in errors:
         assert error < 0.2
+
+
+def align_test_image(ref_image: np.ndarray,
+                     ref_image_preproc: np.ndarray,
+                     offset: np.ndarray,
+                     noise_image: np.ndarray) -> float:
+    offset_y, offset_x = offset
+    translation_matrix = np.array([
+        [1, 0, offset_x],
+        [0, 1, offset_y]
+    ], dtype=np.float32)
+    translated_image = cv2.warpAffine(
+        ref_image,
+        translation_matrix,
+        dsize=(ref_image.shape[1], ref_image.shape[0]))
+    # We add some Gaussian noise to the translated image to simulate varying noise in real images
+    translated_image = np.clip(translated_image + noise_image, 0.0, 1.0)
+    translated_image_preproc = preprocessing.preprocess_for_alignment(translated_image[50:-50, 50:-50, :])
+    found_translation = find_translation(ref_image_preproc, translated_image_preproc)
+    error = np.sqrt(np.sum(np.square(found_translation - offset)))
+    return error

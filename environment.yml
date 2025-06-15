@@ -10,3 +10,4 @@ dependencies:
   - numpy=2.2.6
   - opencv=4.11.0
   - pytest=8.4.0
+  - joblib=1.5.1
