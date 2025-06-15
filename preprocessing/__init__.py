@@ -26,7 +26,7 @@ def estimate_saturated_radius(moon_params: utils.circlefinder.DetectedCircle, ra
 
 def mask_and_filter(image: np.ndarray, moon_center: tuple, moon_mask_radius: float) -> np.ndarray:
     window_mask = preprocessing.masking.hann_window_mask(image.shape)
-    moon_mask = preprocessing.masking.circle_mask(image, moon_center, moon_mask_radius)
+    moon_mask = preprocessing.masking.circle_mask(image.shape, moon_center, moon_mask_radius)
     mask = window_mask * moon_mask
     filtered_image = image - preprocessing.filtering.rotational_blur(image, max_angle=2, center=moon_center)
     image_for_alignment = mask * filtered_image

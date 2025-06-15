@@ -7,10 +7,10 @@ def hann_window_mask(shape: tuple) -> np.ndarray:
     return np.outer(hann(shape[0]), hann(shape[1]))
 
 
-def circle_mask(image: np.ndarray,
+def circle_mask(shape: np.ndarray,
                 mask_center: tuple,
                 mask_radius: float) -> np.ndarray:
-    mask = np.zeros_like(image)
+    mask = np.zeros(shape)
     mask = 1 - cv2.circle(
         img=mask,
         center=(int(mask_center[1]), int(mask_center[0])),
