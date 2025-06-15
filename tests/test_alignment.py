@@ -16,7 +16,7 @@ def test_translate():
     offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
     # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
     noise_image = rng.normal(0.0, 0.01, ref_image.shape)
-    errors = joblib.Parallel(n_jobs=32, prefer='threads')(
+    errors = joblib.Parallel(n_jobs=-1, prefer='threads')(
         joblib.delayed(align_test_image)(ref_image, ref_image_preproc, offset, noise_image) for offset in offsets)
 
     for error in errors:
