@@ -15,12 +15,12 @@ def test_translate():
     rng = np.random.default_rng(122807528840384100672342137672332424406)
     offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
     # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
-    noise_image = rng.normal(0.0, 0.001, ref_image.shape)
+    noise_image = rng.normal(0.0, 0.01, ref_image.shape)
     errors = joblib.Parallel(n_jobs=-1, prefer='threads')(
         joblib.delayed(align_test_image)(ref_image, ref_image_preproc, offset, noise_image) for offset in offsets)
 
     for error in errors:
-        assert error < 0.3
+        assert error < 0.2
 
 
 def align_test_image(ref_image: np.ndarray,
@@ -39,6 +39,6 @@ def align_test_image(ref_image: np.ndarray,
     # We add some Gaussian noise to the translated image to simulate varying noise in real images
     translated_image = np.clip(translated_image + noise_image, 0.0, 1.0)
     translated_image_preproc = preprocessing.preprocess_for_alignment(translated_image[50:-50, 50:-50, :])
-    found_translation = find_translation(ref_image_preproc, translated_image_preproc)
+    found_translation = find_translation(ref_image_preproc, translated_image_preproc, low_pass_sigma=0.2)
     error = np.sqrt(np.sum(np.square(found_translation - offset)))
     return error

@@ -9,18 +9,16 @@ from eclipsetools.preprocessing import preprocess_for_alignment
 from eclipsetools.utils.raw_reader import open_raw_image
 
 
-def align_single_image(reference_image, image_path):
-    """Process a single image alignment operation.
-
-    Args:
-        reference_image: Preprocessed reference image data
-        image_path: Path to the image file to align
-
-    Returns:
-        tuple: (image_path, translation_result)
+def align_single_image(reference_image, image_path, low_pass_sigma):
+    """
+    Process a single image alignment operation.
+    :param reference_image: Preprocessed reference image data
+    :param image_path: Path to the image file to align
+    :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
+    :return: Tuple of image path and translation vector (dy, dx)
     """
     image_to_align = preprocess_for_alignment(open_raw_image(image_path))
-    translation = find_translation(reference_image, image_to_align)
+    translation = find_translation(reference_image, image_to_align, low_pass_sigma)
     return image_path, translation
 
 
@@ -28,12 +26,13 @@ def align_single_image(reference_image, image_path):
 @click.argument('reference_image', type=click.Path(exists=True))
 @click.argument('images_to_align', nargs=-1, required=True)
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
-def main(reference_image, images_to_align, n_jobs):
+@click.option('--low-pass-sigma',
+              default=0.115,
+              type=float,
+              help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
+def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
     """
     Align multiple eclipse images based on translation.
-
-    REFERENCE_IMAGE: Path to the reference RAW image file
-    IMAGES_TO_ALIGN: One or more RAW image files or glob patterns that need alignment
     """
     # Expand glob patterns to get actual file paths
     expanded_image_paths = []
@@ -59,7 +58,7 @@ def main(reference_image, images_to_align, n_jobs):
 
     # Process all images in parallel using joblib
     results = joblib.Parallel(n_jobs=n_jobs, prefer='threads')(
-        joblib.delayed(align_single_image)(ref_image, image_path)
+        joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma)
         for image_path in expanded_image_paths
     )
 

@@ -2,6 +2,15 @@ import numpy as np
 
 
 def find_translation(ref_image, image, low_pass_sigma=0.11):
+    """
+    Find the translation between two images using phase correlation.
+    :param ref_image: Reference image to align against
+    :param image: Image to be aligned
+    :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain.
+        The larger the value, the more accurate the results are. But after a certain point, the accuracy collapses,
+        and the reported translation is close to zero.
+    :return: Translation vector (dy, dx) indicating how much the second image is shifted relative to the first.
+    """
     fft1 = np.fft.fft2(ref_image)
     fft2 = np.fft.fft2(image)
     offset = 0.01 * np.max(np.abs(fft1))

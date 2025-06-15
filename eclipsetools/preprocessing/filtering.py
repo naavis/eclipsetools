@@ -1,18 +1,17 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def rotational_blur(
         image: np.ndarray,
         max_angle: float,
         center: tuple) -> np.ndarray:
-    """    Apply a rotational blur to a grayscale image using polar coordinates.
-    Parameters:
-        image (np.ndarray): Input grayscale image (2D array).
-        max_angle (float): Maximum rotation angle in degrees (blur extent).
-        center (tuple): (x, y) coordinates of the rotation center.
-    Returns:
-        np.ndarray: Blurred image.
+    """
+    Apply a rotational blur to a grayscale image using polar coordinates.
+    :param image: Input grayscale image (2D array).
+    :param max_angle: Maximum rotation angle in degrees (blur extent).
+    :param center: (x, y) coordinates of the rotation center.
+    :return: Blurred image as a 2D array.
     """
     assert image.ndim == 2, "Input image must be grayscale (2D array)."
 
