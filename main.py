@@ -34,7 +34,7 @@ def main(reference_image, images_to_align, n_jobs):
     """
     ref_image = preprocess_for_alignment(open_raw_image(reference_image).data)
 
-    print(f"Processing {len(images_to_align)} images in parallel...")
+    click.echo(f"Processing {len(images_to_align)} images in parallel...")
 
     # Process all images in parallel using joblib
     results = joblib.Parallel(n_jobs=n_jobs, prefer='threads')(
@@ -44,8 +44,8 @@ def main(reference_image, images_to_align, n_jobs):
 
     # Print results
     for image_path, translation in results:
-        print(f"Image: {image_path}")
-        print(f"  Translation: {translation}")
+        click.echo(f"Image: {image_path}")
+        click.echo(f"  Translation: {translation}")
 
 
 if __name__ == '__main__':
