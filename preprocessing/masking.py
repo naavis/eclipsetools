@@ -20,6 +20,6 @@ def circle_mask(shape: np.ndarray,
     mask = cv2.GaussianBlur(
         src=mask,
         ksize=(0, 0),
-        sigmaX=mask.shape[0] / 200,
-        sigmaY=mask.shape[0] / 200)
+        sigmaX=10,
+        sigmaY=10)
     return mask
