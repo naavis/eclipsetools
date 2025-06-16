@@ -1,12 +1,11 @@
 import cv2
 import numpy as np
-from scipy.signal.windows import hann
 
 from eclipsetools.utils.circle_finder import DetectedCircle
 
 
 def hann_window_mask(shape: tuple) -> np.ndarray:
-    return np.outer(hann(shape[0]), hann(shape[1]))
+    return cv2.createHanningWindow(shape[::-1], cv2.CV_32F)
 
 
 def circle_mask(shape: np.ndarray,
