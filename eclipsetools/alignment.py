@@ -1,4 +1,6 @@
+import cv2
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def find_translation(ref_image, image, low_pass_sigma):
@@ -29,6 +31,86 @@ def find_translation(ref_image, image, low_pass_sigma):
     subpixel_peak = np.where(subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak)
 
     return -subpixel_peak
+
+
+def find_transform(ref_image, image, low_pass_sigma):
+    """
+    Find the scale, rotation, and translation between two images.
+
+    This function uses a multi-step approach:
+    1. Find scale and rotation using log-polar transform and phase correlation
+    2. Apply the found scale and rotation to the image
+    3. Find the translation using phase correlation on the transformed image
+
+    :param ref_image: Reference image to align against
+    :param image: Image to be aligned
+    :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain when finding translation.
+    :return: Tuple containing (scale, rotation_angle_degrees, (dy, dx))
+             where dy, dx is the translation vector
+    """
+    shortest_side = np.min(ref_image.shape)
+    radius = shortest_side // 2
+
+    # Step 1: Find scale and rotation
+    ref_log_polar = _log_polar_fft(ref_image, radius)
+    transformed_log_polar = _log_polar_fft(image, radius)
+
+    # We only need half of the log-polar FFTs, as they are symmetric
+    ref_log_polar = ref_log_polar[:ref_log_polar.shape[0] // 2, :]
+    transformed_log_polar = transformed_log_polar[:transformed_log_polar.shape[0] // 2, :]
+
+    fix, ax = plt.subplots(1, 2)
+    ax[0].imshow(ref_log_polar, cmap='gray')
+    ax[0].set_title('Reference Log-Polar FFT')
+    ax[1].imshow(transformed_log_polar, cmap='gray')
+    ax[1].set_title('Transformed Log-Polar FFT')
+    plt.show()
+
+    # Recover rotation from the correlation result
+    correlation_result = cv2.phaseCorrelate(ref_log_polar, transformed_log_polar)
+    rotation_degrees = 360.0 * -correlation_result[0][1] / ref_log_polar.shape[0]
+
+    # Recover scale from the correlation result
+    klog = shortest_side / np.log(radius)
+    scale = np.exp(-correlation_result[0][0] / klog)
+
+    # Step 2: Apply scale and rotation to the image
+    derotate_rescale_matrix = cv2.getRotationMatrix2D(
+        (image.shape[1] // 2, image.shape[0] // 2), -rotation_degrees, 1.0 / scale)
+
+    translated_image = cv2.warpAffine(
+        image,
+        derotate_rescale_matrix,
+        dsize=(image.shape[1], image.shape[0]),
+        borderMode=cv2.BORDER_REFLECT_101)
+
+    fig, ax = plt.subplots(2, 2)
+    ax[0, 0].imshow(image, cmap='gray')
+    ax[0, 0].set_title('Before derotation and rescaling')
+    ax[0, 1].imshow(translated_image, cmap='gray')
+    ax[0, 1].set_title('After derotation and rescaling')
+    ax[1, 0].imshow(ref_image, cmap='gray')
+    ax[1, 0].set_title('Reference image')
+    plt.show()
+
+    # Step 3: Find translation between reference and transformed image
+    translation = find_translation(ref_image, translated_image, low_pass_sigma)
+
+    return scale, rotation_degrees, translation
+
+
+def _log_polar_fft(image, radius):
+    assert len(image.shape) == 2, "Input image must be a 2D array (grayscale image)."
+    fft_mag = np.abs(np.fft.fftshift(np.fft.fft2(image)))
+    # Amplitude spectra have very high values in the low frequencies, so we use logarithm to compress the range
+    fft_mag = np.log(1.0 + fft_mag)
+    log_polar = cv2.warpPolar(
+        src=fft_mag,
+        dsize=(fft_mag.shape[1], fft_mag.shape[0]),
+        center=(fft_mag.shape[1] // 2, fft_mag.shape[0] // 2),
+        maxRadius=radius,
+        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LOG)
+    return log_polar
 
 
 def _gaussian_weights(shape, sigma):
