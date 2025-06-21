@@ -36,7 +36,7 @@ def _gaussian_weights(shape, sigma):
     fx = np.fft.fftfreq(shape[0])
     fy_grid, fx_grid = np.meshgrid(fy, fx)
     freq_squared = fy_grid ** 2 + fx_grid ** 2
-    gaussian_weighting = np.exp(-0.5 * freq_squared / (sigma ** 2))
+    gaussian_weighting = np.exp(-0.5 * freq_squared / (sigma ** 2), dtype=np.float32)
     return gaussian_weighting
 
 
@@ -65,7 +65,7 @@ def _center_of_mass(image, center_point, window_size):
     x_com_local = (x_grid * region).sum() / total_mass
 
     # Map back to global coordinates (using wrapping)
-    y_com_global = (y0 - half_size + y_com_local) % height
-    x_com_global = (x0 - half_size + x_com_local) % width
+    y_com_global = np.float32((y0 - half_size + y_com_local) % height)
+    x_com_global = np.float32((x0 - half_size + x_com_local) % width)
 
     return y_com_global, x_com_global
