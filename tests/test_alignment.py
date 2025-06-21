@@ -113,6 +113,6 @@ def transform_image(image, translation, rotation, scale):
         matrix,
         dsize=(image.shape[1], image.shape[0]),
         borderMode=cv2.BORDER_REFLECT_101,
-        flags=cv2.INTER_LANCZOS4)
+        flags=cv2.INTER_LANCZOS4).astype(np.float32)
 
     return transformed_image
