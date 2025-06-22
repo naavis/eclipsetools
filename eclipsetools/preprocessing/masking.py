@@ -8,9 +8,9 @@ def hann_window_mask(shape: tuple) -> np.ndarray:
     return cv2.createHanningWindow(shape[::-1], cv2.CV_32F)
 
 
-def circle_mask(shape: np.ndarray,
-                mask_center: tuple,
-                mask_radius: float) -> np.ndarray:
+def annulus_mask(shape: np.ndarray,
+                 mask_center: tuple,
+                 mask_radius: float) -> np.ndarray:
     mask = np.zeros(shape, dtype=np.float32)
 
     cv2.circle(img=mask,
