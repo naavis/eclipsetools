@@ -32,13 +32,13 @@ def align_test_image(ref_image: np.ndarray,
         [1, 0, offset_x],
         [0, 1, offset_y]
     ], dtype=np.float32)
-    translated_image = cv2.warpAffine(
+    test_image = cv2.warpAffine(
         ref_image,
         translation_matrix,
         dsize=(ref_image.shape[1], ref_image.shape[0]))
     # We add some Gaussian noise to the translated image to simulate varying noise in real images
-    translated_image = np.clip(translated_image + noise_image, 0.0, 1.0)
-    translated_image_preproc = preprocessing.preprocess_for_alignment(translated_image)
-    found_translation = find_translation(ref_image_preproc, translated_image_preproc, low_pass_sigma=0.2)
+    noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0)
+    translated_test_image = preprocessing.preprocess_for_alignment(noisy_test_image)
+    found_translation = find_translation(ref_image_preproc, translated_test_image, low_pass_sigma=0.2)
     error = np.sqrt(np.sum(np.square(found_translation - offset)))
     return error
