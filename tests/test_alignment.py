@@ -9,7 +9,7 @@ from eclipsetools.utils.raw_reader import open_raw_image
 
 def test_translate():
     ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
-    ref_image_preproc = preprocessing.preprocess_for_alignment(ref_image[50:-50, 50:-50, :])
+    ref_image_preproc = preprocessing.preprocess_for_alignment(ref_image)
 
     num_tests = 10
     rng = np.random.default_rng(122807528840384100672342137672332424406)
@@ -38,7 +38,7 @@ def align_test_image(ref_image: np.ndarray,
         dsize=(ref_image.shape[1], ref_image.shape[0]))
     # We add some Gaussian noise to the translated image to simulate varying noise in real images
     translated_image = np.clip(translated_image + noise_image, 0.0, 1.0)
-    translated_image_preproc = preprocessing.preprocess_for_alignment(translated_image[50:-50, 50:-50, :])
+    translated_image_preproc = preprocessing.preprocess_for_alignment(translated_image)
     found_translation = find_translation(ref_image_preproc, translated_image_preproc, low_pass_sigma=0.2)
     error = np.sqrt(np.sum(np.square(found_translation - offset)))
     return error
