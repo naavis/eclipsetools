@@ -18,9 +18,9 @@ def _mask_and_filter(image: np.ndarray, moon_center: tuple, moon_mask_radius: fl
     window_mask = masking.hann_window_mask(image.shape)
     moon_mask = masking.circle_mask(image.shape, moon_center, moon_mask_radius)
     mask = window_mask * moon_mask
-    # TODO: Parametrize max_angle, which is used to control the amount of rotational blur used in the tangential high-pass filter
+    # TODO: Parametrize sigma, which is used to control the amount of rotational blur used in the tangential high-pass filter
     filtered_image = image - filtering.rotational_blur(image,
-                                                       max_angle=2,
+                                                       sigma=0.5,
                                                        center=moon_center)
     image_for_alignment = mask * filtered_image
     return image_for_alignment

@@ -4,33 +4,31 @@ import numpy as np
 
 def rotational_blur(
         image: np.ndarray,
-        max_angle: float,
+        sigma: float,
         center: tuple) -> np.ndarray:
     """
-    Apply a rotational blur to a grayscale image using polar coordinates.
+    Apply a rotational Gaussian blur to a grayscale image using polar coordinates.
     :param image: Input grayscale image (2D array).
-    :param max_angle: Maximum rotation angle in degrees (blur extent).
+    :param sigma: Blur sigma in degrees.
     :param center: (x, y) coordinates of the rotation center.
     :return: Blurred image as a 2D array.
     """
     assert image.ndim == 2, "Input image must be grayscale (2D array)."
 
     # max_radius defines the outer boundary of the polar transform
-    max_radius = np.sqrt(((image.shape[0] / 2.0) ** 2.0) + ((image.shape[1] / 2.0) ** 2.0))
+    max_radius = np.sqrt((image.shape[0] ** 2.0) + (image.shape[1] ** 2.0))
 
     polar_image = cv2.linearPolar(
         src=image,
         center=(center[1], center[0]),
         maxRadius=max_radius,
-        flags=cv2.WARP_POLAR_LINEAR)
+        flags=cv2.INTER_LANCZOS4 | cv2.WARP_POLAR_LINEAR)
 
-    blur_width = int(max_angle * polar_image.shape[0] / 360.0)
-    blur_kernel_size = (1, blur_width)
-
-    blurred_polar = cv2.blur(src=polar_image, ksize=blur_kernel_size)
+    sigma_pixels = sigma * polar_image.shape[0] / 360.0
+    blurred_polar = cv2.GaussianBlur(src=polar_image, ksize=(1, -1), sigmaX=0, sigmaY=sigma_pixels)
 
     return cv2.linearPolar(
         src=blurred_polar,
         center=(center[1], center[0]),
         maxRadius=max_radius,
-        flags=cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP)
+        flags=cv2.INTER_LANCZOS4 | cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP)
