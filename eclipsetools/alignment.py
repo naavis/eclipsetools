@@ -18,7 +18,7 @@ def find_translation(ref_image, image, low_pass_sigma):
 
     gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
 
-    phase_correlation = np.real(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
+    phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
     subpixel_peak = _center_of_mass(phase_correlation, initial_peak, 4)
