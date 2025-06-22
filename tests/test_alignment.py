@@ -47,18 +47,18 @@ def _find_test_image_translation(ref_image: np.ndarray,
 
 def test_align():
     ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
-    num_tests = 3
+    # ref_image = open_raw_image(r'D:\Juttuja\EclipseAlignment\corona_images\7C0A4798.CR3')
+    num_tests = 1
     rng = np.random.default_rng(122807528840384100672342137672332424406)
-    offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
-    rotations = rng.uniform(0.0, 360.0, num_tests)
+    offsets = rng.uniform(-20.0, 20.0, (num_tests, 2))
+    rotations = rng.uniform(-10.0, 10.0, num_tests)
     scales = rng.uniform(0.8, 1.2, num_tests)
     # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
-    # noise_image = rng.normal(0.0, 0.001, ref_image.shape)
-    noise_image = np.zeros_like(ref_image, dtype=np.float32)  # TODO: Use real noise again
+    noise_image = rng.normal(0.0, 0.001, ref_image.shape)
+    # noise_image = np.zeros_like(ref_image, dtype=np.float32)  # No noise for now
     errors = joblib.Parallel(n_jobs=1, prefer='threads')(
         joblib.delayed(_find_transform_error)(
             ref_image,
-            preprocessing.preprocess_for_alignment(ref_image),
             offset,
             rotation,
             scale,
@@ -73,18 +73,27 @@ def test_align():
 
 
 def _find_transform_error(ref_image: np.ndarray,
-                          ref_image_preproc: np.ndarray,
                           offset: np.ndarray,
                           rotation: float,
                           scale: float,
                           noise_image: np.ndarray) -> tuple[float, float, float]:
-    transformed_image = transform_image(ref_image, offset, rotation, scale)
-    crop_margin = 100
-    noisy_image = np.clip(transformed_image + noise_image, 0.0, 1.0)
-    preproc_crop = preprocessing.preprocess_for_alignment(
-        noisy_image)[crop_margin:-crop_margin, crop_margin:-crop_margin]
-    ref_preproc_crop = ref_image_preproc[crop_margin:-crop_margin, crop_margin:-crop_margin]
-    (recovered_scale, recovered_rotation, recovered_translation) = find_transform(ref_preproc_crop, preproc_crop, 0.1)
+    rotation = -90.0
+    scale = 1.0
+
+    # We crop images to avoid artifacts at the edges that can occur due to the affine transformation
+    crop_margin = 500
+    # Cropping has to be done before preprocessing to avoid artifacts at the edges
+    ref_image_preproc = preprocessing.preprocess_for_alignment(
+        ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :])
+
+    test_image = transform_image(ref_image, offset, rotation, scale)
+    noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0, dtype=np.float32)
+
+    preproc_image = preprocessing.preprocess_for_alignment(
+        noisy_test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :])
+
+    recovered_scale, recovered_rotation, recovered_translation = find_transform(ref_image_preproc, preproc_image, 0.2)
+    print()
     print(f'Expected: {scale=}, {rotation=}, {offset=}')
     print(f'Recovered: {recovered_scale=}, {recovered_rotation=}, {recovered_translation=}')
     return (abs(1.0 - recovered_scale / scale),
@@ -103,7 +112,8 @@ def transform_image(image, translation, rotation, scale):
     center = (image.shape[1] // 2, image.shape[0] // 2)
 
     # Create rotation matrix around center with scaling
-    transform_matrix = np.vstack((cv2.getRotationMatrix2D(center, rotation, scale), [0, 0, 1]))
+    transform_matrix = np.vstack((cv2.getRotationMatrix2D(center=center, angle=rotation, scale=scale), [0, 0, 1]),
+                                 dtype=np.float32)
 
     # Create affine matrix that translates first, then rotates and scales
     matrix = (transform_matrix @ translation_matrix)[:2, :]
@@ -112,7 +122,8 @@ def transform_image(image, translation, rotation, scale):
         image,
         matrix,
         dsize=(image.shape[1], image.shape[0]),
-        borderMode=cv2.BORDER_REFLECT_101,
-        flags=cv2.INTER_LANCZOS4).astype(np.float32)
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=[0, 0, 0]).astype(np.float32)
 
     return transformed_image

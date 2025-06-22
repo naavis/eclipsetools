@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
+from eclipsetools.preprocessing.masking import hann_window_mask
+
 
 def find_translation(ref_image, image, low_pass_sigma):
     """
@@ -48,31 +50,27 @@ def find_transform(ref_image, image, low_pass_sigma):
     :return: Tuple containing (scale, rotation_angle_degrees, (dy, dx))
              where dy, dx is the translation vector
     """
-    shortest_side = np.min(ref_image.shape)
-    radius = shortest_side // 2
+
+    shape = ref_image.shape
+    shortest_side = np.min(shape)
+    radius = shortest_side // 8
 
     # Step 1: Find scale and rotation
-    ref_log_polar = _log_polar_fft(ref_image, radius)
-    transformed_log_polar = _log_polar_fft(image, radius)
-
     # We only need half of the log-polar FFTs, as they are symmetric
-    ref_log_polar = ref_log_polar[:ref_log_polar.shape[0] // 2, :]
-    transformed_log_polar = transformed_log_polar[:transformed_log_polar.shape[0] // 2, :]
+    ref_fft_log_polar = _log_polar_fft(ref_image, radius)[:shape[0] // 2, :]
+    image_fft_log_polar = _log_polar_fft(image, radius)[:shape[0] // 2, :]
 
-    fix, ax = plt.subplots(1, 2)
-    ax[0].imshow(ref_log_polar, cmap='gray')
-    ax[0].set_title('Reference Log-Polar FFT')
-    ax[1].imshow(transformed_log_polar, cmap='gray')
-    ax[1].set_title('Transformed Log-Polar FFT')
-    plt.show()
+    # Find shifts in the log-polar FFTs using phase correlation
+    shift_y, shift_x = _simple_phase_correlation(ref_fft_log_polar, image_fft_log_polar)
+
+    print(f'Found shifts: {shift_y=}, {shift_x=}')
 
     # Recover rotation from the correlation result
-    correlation_result = cv2.phaseCorrelate(ref_log_polar, transformed_log_polar)
-    rotation_degrees = 360.0 * -correlation_result[0][1] / ref_log_polar.shape[0]
+    rotation_degrees = 360.0 * shift_y / (radius * np.pi * np.pi)
 
     # Recover scale from the correlation result
-    klog = shortest_side / np.log(radius)
-    scale = np.exp(-correlation_result[0][0] / klog)
+    klog = radius / np.log(radius)
+    scale = np.exp(shift_x / klog)
 
     # Step 2: Apply scale and rotation to the image
     derotate_rescale_matrix = cv2.getRotationMatrix2D(
@@ -82,21 +80,49 @@ def find_transform(ref_image, image, low_pass_sigma):
         image,
         derotate_rescale_matrix,
         dsize=(image.shape[1], image.shape[0]),
-        borderMode=cv2.BORDER_REFLECT_101)
-
-    fig, ax = plt.subplots(2, 2)
-    ax[0, 0].imshow(image, cmap='gray')
-    ax[0, 0].set_title('Before derotation and rescaling')
-    ax[0, 1].imshow(translated_image, cmap='gray')
-    ax[0, 1].set_title('After derotation and rescaling')
-    ax[1, 0].imshow(ref_image, cmap='gray')
-    ax[1, 0].set_title('Reference image')
-    plt.show()
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=[0, 0, 0]).astype(np.float32)
 
     # Step 3: Find translation between reference and transformed image
     translation = find_translation(ref_image, translated_image, low_pass_sigma)
 
     return scale, rotation_degrees, translation
+
+
+def _simple_phase_correlation(ref_image, image):
+    assert ref_image.shape == image.shape, "Reference and image must have the same shape."
+
+    window = hann_window_mask(ref_image.shape)
+
+    fig, ax = plt.subplots(1, 2)
+    ax[0].imshow(window * ref_image, cmap='gray')
+    ax[0].set_title('Reference Image')
+    ax[1].imshow(window * image, cmap='gray')
+    ax[1].set_title('Image to Align')
+    plt.show()
+
+    fft1 = np.fft.fft2(window * ref_image)
+    fft2 = np.fft.fft2(window * image)
+
+    cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 * fft2) + 1e-8)
+    phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
+
+    plt.imshow(np.fft.fftshift(phase_correlation), cmap='gray')
+    plt.title('Phase Correlation')
+    plt.axhline(y=phase_correlation.shape[0] // 2, color='red', linestyle='--')
+    plt.axvline(x=phase_correlation.shape[1] // 2, color='red', linestyle='--')
+    plt.show()
+
+    shift_y, shift_x = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
+
+    # Shifts peak coordinates to wrap around
+    if shift_y > phase_correlation.shape[0] // 2:
+        shift_y -= phase_correlation.shape[0]
+
+    if shift_x > phase_correlation.shape[1] // 2:
+        shift_x -= phase_correlation.shape[1]
+
+    return shift_y, shift_x
 
 
 def _log_polar_fft(image, radius):
@@ -106,7 +132,7 @@ def _log_polar_fft(image, radius):
     fft_mag = np.log(1.0 + fft_mag)
     log_polar = cv2.warpPolar(
         src=fft_mag,
-        dsize=(fft_mag.shape[1], fft_mag.shape[0]),
+        dsize=(0, 0),
         center=(fft_mag.shape[1] // 2, fft_mag.shape[0] // 2),
         maxRadius=radius,
         flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LOG)
