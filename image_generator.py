@@ -8,7 +8,7 @@ import eclipsetools.preprocessing
 from eclipsetools.preprocessing.masking import hann_window_mask
 from eclipsetools.utils.raw_reader import open_raw_image
 
-SAVE_IMAGES = False
+SAVE_IMAGES = True
 
 
 def main():
@@ -18,6 +18,7 @@ def main():
 
     ref_image_preproc = eclipsetools.preprocessing.preprocess_for_alignment(
         ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin])
+    ref_image_preproc = pad_with_zeros(ref_image_preproc)
 
     rotations = np.arange(0, 90 + 5, 5)
     for r in rotations:
@@ -25,6 +26,7 @@ def main():
         test_image = generate_test_image(ref_image, float(r))
         test_image_preproc = eclipsetools.preprocessing.preprocess_for_alignment(
             test_image[crop_margin:-crop_margin, crop_margin:-crop_margin])
+        test_image_preproc = pad_with_zeros(test_image_preproc)
         test_image_filename = os.path.join('generator_output', f'test_image_rot_{r:02d}.png')
         if SAVE_IMAGES:
             plt.imsave(test_image_filename, test_image_preproc, cmap='gray')
@@ -32,6 +34,17 @@ def main():
                                                                   suffix=f'rot_{r:02d}')
         print(f'Rotation: {recovered_rotation:.2f} degrees, Scale: {recovered_scale:.4f}')
         print('----------------------')
+
+
+def pad_with_zeros(image: np.ndarray) -> np.ndarray:
+    assert len(image.shape) == 2, "Input image must be a 2D array (grayscale image)."
+    h, w = image.shape
+    longer_side = max(h, w)
+    padded = np.zeros((longer_side, longer_side), dtype=image.dtype)
+    y_offset = (longer_side - h) // 2
+    x_offset = (longer_side - w) // 2
+    padded[y_offset:y_offset + h, x_offset:x_offset + w] = image
+    return padded
 
 
 def generate_test_image(ref_image: np.ndarray, rotation: float) -> np.ndarray:
@@ -94,9 +107,6 @@ def _log_polar_fft(image: np.ndarray, radius: float, cartesian_filename: str, po
         center=(fft_mag.shape[1] / 2.0, fft_mag.shape[0] / 2.0),
         maxRadius=radius,
         flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LOG)
-
-    plt.imshow(log_polar, cmap='gray')
-    plt.show()
 
     if SAVE_IMAGES:
         plt.imsave(cartesian_filename, fft_mag, cmap='gray')
