@@ -80,6 +80,7 @@ def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tupl
         image_pad,
         rotate_scale_matrix,
         dsize=(image_pad.shape[1], image_pad.shape[0]),
+        flags=cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=[0, 0, 0]).astype(np.float32)
 
