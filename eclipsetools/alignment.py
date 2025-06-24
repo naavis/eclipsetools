@@ -73,12 +73,12 @@ def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tupl
     scale = np.exp(shift_x / k_log)
 
     # Step 2: Apply scale and rotation to the image
-    derotate_rescale_matrix = cv2.getRotationMatrix2D(
+    rotate_scale_matrix = cv2.getRotationMatrix2D(
         (image_pad.shape[1] // 2, image_pad.shape[0] // 2), -rotation_degrees, 1.0 / scale)
 
     translated_image = cv2.warpAffine(
         image_pad,
-        derotate_rescale_matrix,
+        rotate_scale_matrix,
         dsize=(image_pad.shape[1], image_pad.shape[0]),
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=[0, 0, 0]).astype(np.float32)
