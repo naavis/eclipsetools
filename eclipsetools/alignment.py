@@ -1,11 +1,10 @@
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 
 from eclipsetools.preprocessing.masking import hann_window_mask
 
 
-def find_translation(ref_image, image, low_pass_sigma):
+def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     """
     Find the translation between two images using phase correlation.
     :param ref_image: Reference image to align against
@@ -25,7 +24,7 @@ def find_translation(ref_image, image, low_pass_sigma):
     phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
-    subpixel_peak = _center_of_mass(phase_correlation, initial_peak, 4)
+    subpixel_peak = _center_of_mass(phase_correlation, (int(initial_peak[0]), int(initial_peak[1])), 4)
 
     # Upper half of each axis represents negative translations
     thresholds = np.array(phase_correlation.shape[:2]) // 2
@@ -35,7 +34,7 @@ def find_translation(ref_image, image, low_pass_sigma):
     return -subpixel_peak
 
 
-def find_transform(ref_image, image, low_pass_sigma):
+def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tuple[float, float]]:
     """
     Find the scale, rotation, and translation between two images.
 
@@ -108,24 +107,11 @@ def _simple_phase_correlation(ref_image, image):
 
     window = hann_window_mask(ref_image.shape)
 
-    fig, ax = plt.subplots(1, 2)
-    ax[0].imshow(window * ref_image, cmap='gray')
-    ax[0].set_title('Reference Image')
-    ax[1].imshow(window * image, cmap='gray')
-    ax[1].set_title('Image to Align')
-    plt.show()
-
     fft1 = np.fft.fft2(window * ref_image)
     fft2 = np.fft.fft2(window * image)
 
     cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 * fft2) + 1e-8)
     phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
-
-    plt.imshow(np.fft.fftshift(phase_correlation), cmap='gray')
-    plt.title('Phase Correlation')
-    plt.axhline(y=phase_correlation.shape[0] // 2, color='red', linestyle='--')
-    plt.axvline(x=phase_correlation.shape[1] // 2, color='red', linestyle='--')
-    plt.show()
 
     shift_y, shift_x = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
 
@@ -139,7 +125,7 @@ def _simple_phase_correlation(ref_image, image):
     return shift_y, shift_x
 
 
-def _log_polar_fft(image, radius):
+def _log_polar_fft(image: np.ndarray, radius: float) -> np.ndarray:
     assert len(image.shape) == 2, "Input image must be a 2D array (grayscale image)."
     fft_mag = np.abs(np.fft.fftshift(np.fft.fft2(image)))
     # Amplitude spectra have very high values in the low frequencies, so we use logarithm to compress the range
@@ -153,7 +139,7 @@ def _log_polar_fft(image, radius):
     return log_polar
 
 
-def _gaussian_weights(shape, sigma):
+def _gaussian_weights(shape: tuple, sigma: float) -> np.ndarray:
     fy = np.fft.fftfreq(shape[1])
     fx = np.fft.fftfreq(shape[0])
     fy_grid, fx_grid = np.meshgrid(fy, fx)
@@ -162,7 +148,8 @@ def _gaussian_weights(shape, sigma):
     return gaussian_weighting
 
 
-def _center_of_mass(image, center_point, window_size):
+def _center_of_mass(image: np.ndarray, center_point: tuple[int, int], window_size: int) -> \
+        tuple[float, float]:
     height, width = image.shape
     y0, x0 = center_point
     half_size = window_size // 2
@@ -180,7 +167,7 @@ def _center_of_mass(image, center_point, window_size):
     # Compute total intensity
     total_mass = region.sum()
     if total_mass == 0:
-        return y0, x0  # or None
+        return float(y0), float(x0)  # or None
 
     # Compute local CoM
     y_com_local = (y_grid * region).sum() / total_mass
