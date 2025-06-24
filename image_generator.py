@@ -86,7 +86,7 @@ def find_rotation_scale(ref_image: np.ndarray, test_image: np.ndarray, suffix: s
     shift_y, shift_x = _simple_phase_correlation(ref_fft_log_polar, image_fft_log_polar, suffix)
 
     # Recover rotation from the correlation result
-    rotation_degrees = 360.0 * shift_y / (polar_radius * np.pi * np.pi)
+    rotation_degrees = 360.0 * shift_y / ref_fft_log_polar.shape[0]
 
     # Recover scale from the correlation result
     k_log = polar_radius / np.log(polar_radius)
@@ -127,7 +127,7 @@ def _simple_phase_correlation(ref_image: np.ndarray, image: np.ndarray, suffix: 
 
     if SAVE_IMAGES:
         plt.imsave(os.path.join('generator_output', f'phase_correlation_{suffix}.png'),
-                   np.fft.fftshift(phase_correlation),
+                   np.log(1 + np.fft.fftshift(phase_correlation)),
                    cmap='gray')
 
     shift_y, shift_x = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
