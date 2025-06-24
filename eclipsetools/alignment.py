@@ -109,7 +109,8 @@ def _simple_phase_correlation(ref_image, image):
     fft1 = np.fft.fft2(window * ref_image)
     fft2 = np.fft.fft2(window * image)
 
-    cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 * fft2) + 1e-8)
+    offset = 0.01 * np.max(np.abs(fft1))
+    cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 + offset) * np.abs(fft2 + offset))
     phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
 
     shift_y, shift_x = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
