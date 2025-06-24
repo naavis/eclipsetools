@@ -69,8 +69,8 @@ def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tupl
     rotation_degrees = 360.0 * shift_y / ref_fft_log_polar.shape[0]
 
     # Recover scale from the correlation result
-    klog = radius / np.log(radius)
-    scale = np.exp(shift_x / klog)
+    k_log = radius / np.log(radius)
+    scale = np.exp(shift_x / k_log)
 
     # Step 2: Apply scale and rotation to the image
     derotate_rescale_matrix = cv2.getRotationMatrix2D(
