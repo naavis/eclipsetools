@@ -65,8 +65,6 @@ def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tupl
     # Find shifts in the log-polar FFTs using phase correlation
     shift_y, shift_x = _simple_phase_correlation(ref_fft_log_polar, image_fft_log_polar)
 
-    print(f'Found shifts: {shift_y=}, {shift_x=}')
-
     # Recover rotation from the correlation result
     rotation_degrees = 360.0 * shift_y / ref_fft_log_polar.shape[0]
 

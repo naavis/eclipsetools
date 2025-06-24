@@ -46,7 +46,6 @@ def _find_test_image_translation(ref_image: np.ndarray,
 
 
 def test_align():
-    print('')
     ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
     num_tests = 10
     rng = np.random.default_rng(122807528840384100672342137672332424406)
