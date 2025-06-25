@@ -7,5 +7,5 @@ Toolkit for aligning and processing total solar eclipse photographs.
 Execute:
 
 ```bash
-pytest
+pytest -n auto
 ```
