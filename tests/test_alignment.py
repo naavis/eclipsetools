@@ -1,5 +1,4 @@
 import cv2
-import joblib
 import numpy as np
 
 from eclipsetools import preprocessing
@@ -10,8 +9,41 @@ from eclipsetools.utils.raw_reader import open_raw_image
 TEST_SEED = 122807528840384100672342137672332424406
 
 
+def test_align_parametrized(align_params):
+    """Individual test case for alignment with specific parameters."""
+    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
+    offset, rotation, scale = align_params
+
+    # No noise for this test, same as in the original test
+    noise_image = np.zeros_like(ref_image, dtype=np.float32)
+
+    # Call the test function directly without joblib parallelization
+    error = _find_transform_error(ref_image, offset, rotation, scale, noise_image)
+
+    scale_error, rotation_error, translation_error = error
+    assert scale_error < 0.02, f'Scale error too high: {scale_error}'
+    assert rotation_error < 0.3, f'Rotation error too high: {rotation_error}'
+    assert translation_error < 1.0, f'Translation error too high: {translation_error}'
+
+
+def test_translate_parametrized(translate_params):
+    """Individual test case for translation with specific parameters."""
+    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
+    offset = translate_params
+
+    # No noise for this test, same as in the original test
+    noise_image = np.zeros_like(ref_image, dtype=np.float32)
+
+    # Call the test function directly without joblib parallelization
+    error = _find_test_image_translation(ref_image, preprocessing.preprocess_for_alignment(ref_image), offset,
+                                         noise_image)
+
+    assert error is not None and error < 0.2, f'Translation error too high for offset {offset}: {error}'
+
+
 def pytest_generate_tests(metafunc):
-    """Generate test cases for test_align_parametrized function."""
+    """Generate test cases for test_align_parametrized and test_translate_parametrized functions."""
+    # Generate parameters for test_align_parametrized
     if "align_params" in metafunc.fixturenames:
         # Use the same random number generator as in the original test
         rng = np.random.default_rng(TEST_SEED)
@@ -32,22 +64,23 @@ def pytest_generate_tests(metafunc):
 
         metafunc.parametrize("align_params", test_cases, ids=ids)
 
+    # Generate parameters for test_translate_parametrized
+    if "translate_params" in metafunc.fixturenames:
+        rng = np.random.default_rng(TEST_SEED)
+        num_tests = 30
 
-def test_translate():
-    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
-    ref_image_preproc = preprocessing.preprocess_for_alignment(ref_image)
+        # Generate the same offsets as in the original test_translate
+        offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
 
-    num_tests = 10
-    rng = np.random.default_rng(122807528840384100672342137672332424406)
-    offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
-    # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
-    noise_image = rng.normal(0.0, 0.001, ref_image.shape)
-    errors = joblib.Parallel(n_jobs=-1, prefer='threads')(
-        joblib.delayed(_find_test_image_translation)(ref_image, ref_image_preproc, offset, noise_image) for offset in
-        offsets)
+        # Create a list of test cases with IDs
+        test_cases = []
+        ids = []
 
-    for i, error in enumerate(errors):
-        assert error is not None and error < 0.2, f'Translation error too high for image {i}: {error}'
+        for i in range(num_tests):
+            test_cases.append(offsets[i])
+            ids.append(f"offset=({offsets[i][0]:.1f},{offsets[i][1]:.1f})")
+
+        metafunc.parametrize("translate_params", test_cases, ids=ids)
 
 
 def _find_test_image_translation(ref_image: np.ndarray,
@@ -71,34 +104,6 @@ def _find_test_image_translation(ref_image: np.ndarray,
     return error
 
 
-def test_align():
-    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
-    num_tests = 30
-    rng = np.random.default_rng(122807528840384100672342137672332424406)
-    offsets = rng.uniform(-20.0, 20.0, (num_tests, 2))
-    rotations = rng.uniform(-85.0, 85.0, num_tests)
-    scales = rng.uniform(0.8, 1.2, num_tests)
-    # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
-    # noise_image = rng.normal(0.0, 0.001, ref_image.shape)
-    noise_image = np.zeros_like(ref_image, dtype=np.float32)  # No noise for this test
-    errors = joblib.Parallel(n_jobs=-1, prefer='threads')(
-        joblib.delayed(_find_transform_error)(
-            ref_image,
-            offset,
-            rotation,
-            scale,
-            noise_image) for (offset, rotation, scale) in zip(offsets, rotations, scales))
-
-    for i, error in enumerate(errors):
-        print(f'Image {i}: {error}')
-
-    for i, error in enumerate(errors):
-        (scale_error, rotation_error, translation_error) = error
-        assert scale_error < 0.02, f'Scale error too high for image {i}: {scale_error}'
-        assert rotation_error < 0.3, f'Rotation error too high for image {i}: {rotation_error}'
-        assert translation_error < 1.0, f'Translation error too high for image {i}: {translation_error}'
-
-
 def _find_transform_error(ref_image: np.ndarray,
                           offset: np.ndarray,
                           rotation: float,
@@ -110,7 +115,7 @@ def _find_transform_error(ref_image: np.ndarray,
     ref_image_preproc = preprocessing.preprocess_for_alignment(
         ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :])
 
-    test_image = transform_image(ref_image, offset, rotation, scale)
+    test_image = _transform_image(ref_image, offset, rotation, scale)
     noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0, dtype=np.float32)
 
     preproc_image = preprocessing.preprocess_for_alignment(
@@ -128,7 +133,7 @@ def _find_transform_error(ref_image: np.ndarray,
     return scale_error, rotation_error, translation_error
 
 
-def transform_image(image, translation, rotation, scale):
+def _transform_image(image, translation, rotation, scale):
     translate_y, translate_x = translation
 
     translation_matrix = np.array([[1, 0, translate_x],
@@ -154,20 +159,3 @@ def transform_image(image, translation, rotation, scale):
         borderValue=[0, 0, 0]).astype(np.float32)
 
     return transformed_image
-
-
-def test_align_parametrized(align_params):
-    """Individual test case for alignment with specific parameters."""
-    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
-    offset, rotation, scale = align_params
-
-    # No noise for this test, same as in the original test
-    noise_image = np.zeros_like(ref_image, dtype=np.float32)
-
-    # Call the test function directly without joblib parallelization
-    error = _find_transform_error(ref_image, offset, rotation, scale, noise_image)
-
-    scale_error, rotation_error, translation_error = error
-    assert scale_error < 0.02, f'Scale error too high: {scale_error}'
-    assert rotation_error < 0.3, f'Rotation error too high: {rotation_error}'
-    assert translation_error < 1.0, f'Translation error too high: {translation_error}'
