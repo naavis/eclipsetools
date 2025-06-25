@@ -20,8 +20,8 @@ def test_translate():
         joblib.delayed(_find_test_image_translation)(ref_image, ref_image_preproc, offset, noise_image) for offset in
         offsets)
 
-    for error in errors:
-        assert error is not None and error < 0.2
+    for i, error in enumerate(errors):
+        assert error is not None and error < 0.2, f'Translation error too high for image {i}: {error}'
 
 
 def _find_test_image_translation(ref_image: np.ndarray,
@@ -47,15 +47,15 @@ def _find_test_image_translation(ref_image: np.ndarray,
 
 def test_align():
     ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
-    num_tests = 10
+    num_tests = 30
     rng = np.random.default_rng(122807528840384100672342137672332424406)
     offsets = rng.uniform(-20.0, 20.0, (num_tests, 2))
-    rotations = rng.uniform(-10.0, 10.0, num_tests)
+    rotations = rng.uniform(-85.0, 85.0, num_tests)
     scales = rng.uniform(0.8, 1.2, num_tests)
     # We can reuse the same noise in each test image to avoid passing the RNG around to several threads
-    noise_image = rng.normal(0.0, 0.001, ref_image.shape)
-    # noise_image = np.zeros_like(ref_image, dtype=np.float32)  # No noise for now
-    errors = joblib.Parallel(n_jobs=1, prefer='threads')(
+    # noise_image = rng.normal(0.0, 0.001, ref_image.shape)
+    noise_image = np.zeros_like(ref_image, dtype=np.float32)  # No noise for this test
+    errors = joblib.Parallel(n_jobs=-1, prefer='threads')(
         joblib.delayed(_find_transform_error)(
             ref_image,
             offset,
@@ -63,13 +63,14 @@ def test_align():
             scale,
             noise_image) for (offset, rotation, scale) in zip(offsets, rotations, scales))
 
-    for error in errors:
+    for i, error in enumerate(errors):
+        print(f'Image {i}: {error}')
+
+    for i, error in enumerate(errors):
         (scale_error, rotation_error, translation_error) = error
-        print(
-            f'Scale error: {scale_error:.2f}, rotation error: {rotation_error:.2f}, translation error: {translation_error:.2f}')
-        # assert scale_error < 0.05, f'Scale error too high: {scale_error}'
-        # assert rotation_error < 0.3, f'Rotation error too high: {rotation_error}'
-        # assert translation_error < 0.2, f'Translation error too high: {translation_error}'
+        assert scale_error < 0.02, f'Scale error too high for image {i}: {scale_error}'
+        assert rotation_error < 0.3, f'Rotation error too high for image {i}: {rotation_error}'
+        assert translation_error < 1.0, f'Translation error too high for image {i}: {translation_error}'
 
 
 def _find_transform_error(ref_image: np.ndarray,
@@ -90,13 +91,15 @@ def _find_transform_error(ref_image: np.ndarray,
         noisy_test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :])
 
     recovered_scale, recovered_rotation, recovered_translation = find_transform(ref_image_preproc, preproc_image, 0.2)
-    print()
-    print(f'Expected scale {scale:.2f}, rotation {rotation:.2f}, offset {offset}')
-    print(
-        f'Recovered scale {recovered_scale:.2f}, rotation {recovered_rotation:.2f}, translation {recovered_translation}')
-    return (abs(1.0 - recovered_scale / scale),
-            abs(rotation - recovered_rotation),
-            np.sqrt(np.sum(np.square(recovered_translation - offset))))
+    scale_error = float(abs(1.0 - recovered_scale / scale))
+    rotation_error = float(abs(rotation - recovered_rotation))
+    translation_error = float(np.sqrt(np.sum(np.square(recovered_translation - offset))))
+    """
+    if translation_error > 1.0 or rotation_error > 0.3 or scale_error > 0.02:
+        plt.imsave(f'output/test_image_{offset[0]:.2f}_{offset[1]:.2f}_{rotation:.2f}_{scale:.2f}.png',
+                   noisy_test_image)
+    """
+    return scale_error, rotation_error, translation_error
 
 
 def transform_image(image, translation, rotation, scale):

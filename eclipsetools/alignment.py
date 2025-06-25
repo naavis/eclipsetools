@@ -14,16 +14,23 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
         and the reported translation is close to zero.
     :return: Translation vector (dy, dx) indicating how much the second image is shifted relative to the first.
     """
-    fft1 = np.fft.fft2(ref_image)
-    fft2 = np.fft.fft2(image)
+    # return np.array(phase_correlate_opencv(ref_image, image))
+    # return np.array(phase_correlate_skimage(ref_image, image))
+    return np.array(phase_correlate_with_low_pass(ref_image, image, low_pass_sigma))
+
+
+def phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
+    fft1 = np.fft.fft2(img_a)
+    fft2 = np.fft.fft2(img_b)
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
+    # TODO: Consider whether the gaussian weighting is necessary, it didn't seem to improve the results so far
     gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
 
     phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
 
-    initial_peak = np.unravel_index(np.argmax(phase_correlation), image.shape)
+    initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
     subpixel_peak = _center_of_mass(phase_correlation, (int(initial_peak[0]), int(initial_peak[1])), 4)
 
     # Upper half of each axis represents negative translations
@@ -32,6 +39,20 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     subpixel_peak = np.where(subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak)
 
     return -subpixel_peak
+
+
+def phase_correlate_opencv(img_a: np.ndarray, img_b: np.ndarray, window: np.ndarray = None) -> tuple[float, float]:
+    correlation_result = cv2.phaseCorrelate(img_a, img_b, window)
+    (shift_x, shift_y), _correlation = correlation_result
+    return float(shift_y), float(shift_x)
+
+
+def phase_correlate_skimage(img_a: np.ndarray, img_b: np.ndarray, window: np.ndarray = None) -> tuple[float, float]:
+    import skimage.registration
+    if window is not None:
+        raise NotImplementedError("Windowing is not supported in skimage's phase_cross_correlation.")
+    (shift_y, shift_x), _error, _phase_diff = skimage.registration.phase_cross_correlation(img_a, img_b)
+    return float(-shift_y), float(-shift_x)
 
 
 def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tuple[float, float]]:
@@ -105,7 +126,6 @@ def _simple_phase_correlation(ref_image, image):
     assert ref_image.shape == image.shape, "Reference and image must have the same shape."
 
     window = hann_window_mask(ref_image.shape)
-
     fft1 = np.fft.fft2(window * ref_image)
     fft2 = np.fft.fft2(window * image)
 
