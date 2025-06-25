@@ -20,8 +20,8 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
 
 
 def phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
-    fft1 = np.fft.fft2(img_a)
-    fft2 = np.fft.fft2(img_b)
+    fft1 = np.fft.fft2((img_a - np.mean(img_a)) / np.std(img_a))
+    fft2 = np.fft.fft2((img_b - np.mean(img_b)) / np.std(img_b))
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
@@ -126,8 +126,10 @@ def _simple_phase_correlation(ref_image, image):
     assert ref_image.shape == image.shape, "Reference and image must have the same shape."
 
     window = hann_window_mask(ref_image.shape)
-    fft1 = np.fft.fft2(window * ref_image)
-    fft2 = np.fft.fft2(window * image)
+    windowed_ref_image = ref_image * window
+    windowed_image = image * window
+    fft1 = np.fft.fft2((windowed_ref_image - np.mean(windowed_ref_image)) / np.std(windowed_ref_image))
+    fft2 = np.fft.fft2((windowed_image - np.mean(windowed_image)) / np.std(windowed_image))
 
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 + offset) * np.abs(fft2 + offset))
