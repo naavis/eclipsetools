@@ -16,12 +16,12 @@ def annulus_mask(shape: np.ndarray,
     cv2.circle(img=mask,
                center=(int(mask_center[1]), int(mask_center[0])),
                radius=int(mask_radius * 2.0),
-               color=(1.0, 1.0, 1.0, 1.0),
+               color=(1.0,),
                thickness=-1)
     cv2.circle(img=mask,
                center=(int(mask_center[1]), int(mask_center[0])),
                radius=int(mask_radius),
-               color=(0.0, 0.0, 0.0, 1.0),
+               color=(0.0,),
                thickness=-1)
     mask = cv2.GaussianBlur(
         src=mask,

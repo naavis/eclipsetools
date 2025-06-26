@@ -7,7 +7,7 @@ from eclipsetools.preprocessing import masking
 
 def preprocess_for_alignment(rgb_image):
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
-    moon = eclipsetools.utils.circle_finder.find_circle(image, min_radius=400, max_radius=700)
+    moon = eclipsetools.utils.circle_finder.find_circle(image, min_radius=400, max_radius=600)
     assert moon is not None
     saturated_radius = masking.estimate_saturated_radius(moon, rgb_image)
     moon_mask_radius = 1.1 * (saturated_radius if saturated_radius else moon.radius)
