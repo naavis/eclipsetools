@@ -2,9 +2,11 @@ import glob
 import os
 
 import click
+import cv2
 import joblib
+import numpy as np
 
-from eclipsetools.alignment import find_translation
+from eclipsetools.alignment import find_transform
 from eclipsetools.preprocessing import preprocess_for_alignment
 from eclipsetools.utils.raw_reader import open_raw_image
 
@@ -17,9 +19,42 @@ def align_single_image(reference_image, image_path, low_pass_sigma):
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
     :return: Tuple of image path and translation vector (dy, dx)
     """
-    image_to_align = preprocess_for_alignment(open_raw_image(image_path))
-    translation = find_translation(reference_image, image_to_align, low_pass_sigma)
-    return image_path, translation
+    raw_image = open_raw_image(image_path)
+    image_to_align = preprocess_for_alignment(raw_image)
+    scale, rotation_degrees, (translation_y, translation_x) = find_transform(
+        reference_image,
+        image_to_align,
+        low_pass_sigma,
+        allow_scale=False)
+
+    rotation_scale_matrix = np.vstack([
+        cv2.getRotationMatrix2D((image_to_align.shape[1] / 2, image_to_align.shape[0] / 2),
+                                -rotation_degrees,
+                                1.0 / scale),
+        [0.0, 0.0, 1.0]], dtype=np.float32)
+    translation_matrix = np.array(
+        [[1, 0, -translation_x],
+         [0, 1, -translation_y],
+         [0, 0, 1]], dtype=np.float32)
+
+    transform_matrix = (rotation_scale_matrix @ translation_matrix)[:2, :]
+    aligned_image = cv2.warpAffine(raw_image, transform_matrix, (image_to_align.shape[1], image_to_align.shape[0]),
+                                   flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+
+    output_dir = 'output'
+    os.makedirs(output_dir, exist_ok=True)
+    name_prefix = os.path.splitext(os.path.basename(image_path))[0]
+    save_output(output_dir, name_prefix, aligned_image, image_to_align)
+    return image_path, float(scale), float(rotation_degrees), (float(translation_y), float(translation_x))
+
+
+def save_output(output_dir, name_prefix, aligned_image, preprocessed_image):
+    aligned_image_path = os.path.join(output_dir, f"{name_prefix}_aligned.tiff")
+    cv2.imwrite(aligned_image_path, (aligned_image * (2 ** 16 - 1)).astype(np.uint16))
+
+    cv2.imwrite(os.path.join(output_dir, f"{name_prefix}_preprocessed.tiff"),
+                (((preprocessed_image - np.min(preprocessed_image)) / (
+                        np.max(preprocessed_image) - np.min(preprocessed_image))) * 255).astype(np.uint8))
 
 
 @click.command()
@@ -63,9 +98,11 @@ def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
     )
 
     # Print results
-    for image_path, translation in results:
+    for image_path, scale, rotation_degrees, (translation_y, translation_x) in results:
         click.echo(f"Image: {image_path}")
-        click.echo(f"  Translation: {translation}")
+        click.echo(f"  Scale: {scale:.4f}")
+        click.echo(f"  Rotation: {rotation_degrees:.4f} degrees")
+        click.echo(f"  Translation: {translation_x:.4f}, {translation_y:.4f}")
 
 
 if __name__ == '__main__':

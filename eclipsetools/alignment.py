@@ -57,7 +57,8 @@ def phase_correlate_skimage(img_a: np.ndarray, img_b: np.ndarray, window: np.nda
     return float(-shift_y), float(-shift_x)
 
 
-def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tuple[float, float]]:
+def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -> (
+        tuple)[float, float, tuple[float, float]]:
     """
     Find the scale, rotation, and translation between two images.
 
@@ -69,6 +70,7 @@ def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tupl
     :param ref_image: Reference image to align against
     :param image: Image to be aligned
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain when finding translation.
+    :param allow_scale: Allow estimating scale. If False, scale is assumed to be 1.0.
     :return: Tuple containing (scale, rotation_angle_degrees, (dy, dx))
              where dy, dx is the translation vector
     """
@@ -93,7 +95,7 @@ def find_transform(ref_image, image, low_pass_sigma) -> tuple[float, float, tupl
 
     # Recover scale from the correlation result
     k_log = radius / np.log(radius)
-    scale = np.exp(shift_x / k_log)
+    scale = np.exp(shift_x / k_log) if allow_scale else 1.0
 
     # Step 2: Apply scale and rotation to the image
     rotate_scale_matrix = cv2.getRotationMatrix2D(
