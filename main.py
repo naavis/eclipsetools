@@ -50,7 +50,8 @@ def align_single_image(reference_image, image_path, low_pass_sigma):
 
 def save_output(output_dir, name_prefix, aligned_image, preprocessed_image):
     aligned_image_path = os.path.join(output_dir, f"{name_prefix}_aligned.tiff")
-    cv2.imwrite(aligned_image_path, (aligned_image * (2 ** 16 - 1)).astype(np.uint16))
+    aligned_image_opencv = cv2.cvtColor(aligned_image, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(aligned_image_path, (aligned_image_opencv * (2 ** 16 - 1)).astype(np.uint16))
 
     cv2.imwrite(os.path.join(output_dir, f"{name_prefix}_preprocessed.tiff"),
                 (((preprocessed_image - np.min(preprocessed_image)) / (
