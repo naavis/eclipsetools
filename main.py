@@ -27,7 +27,7 @@ def align_single_image(reference_image, image_path, low_pass_sigma):
 @click.argument('images_to_align', nargs=-1, required=True)
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
 @click.option('--low-pass-sigma',
-              default=0.115,
+              default=0.03,
               type=float,
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
 def main(reference_image, images_to_align, n_jobs, low_pass_sigma):

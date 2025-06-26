@@ -20,12 +20,14 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
 
 
 def phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
-    fft1 = np.fft.fft2((img_a - np.mean(img_a)) / np.std(img_a))
-    fft2 = np.fft.fft2((img_b - np.mean(img_b)) / np.std(img_b))
+    normalized_ref_image = (img_a - np.mean(img_a)) / np.std(img_a)
+    normalized_image = (img_b - np.mean(img_b)) / np.std(img_b)
+    window = hann_window_mask(img_a.shape)
+    fft1 = np.fft.fft2(window * normalized_ref_image)
+    fft2 = np.fft.fft2(window * normalized_image)
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
-    # TODO: Consider whether the gaussian weighting is necessary, it didn't seem to improve the results so far
     gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
 
     phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
@@ -125,11 +127,12 @@ def _pad_with_zeros(image: np.ndarray) -> np.ndarray:
 def _simple_phase_correlation(ref_image, image):
     assert ref_image.shape == image.shape, "Reference and image must have the same shape."
 
+    normalized_ref_image = (ref_image - np.mean(ref_image)) / np.std(ref_image)
+    normalized_image = (image - np.mean(image)) / np.std(image)
+
     window = hann_window_mask(ref_image.shape)
-    windowed_ref_image = ref_image * window
-    windowed_image = image * window
-    fft1 = np.fft.fft2((windowed_ref_image - np.mean(windowed_ref_image)) / np.std(windowed_ref_image))
-    fft2 = np.fft.fft2((windowed_image - np.mean(windowed_image)) / np.std(windowed_image))
+    fft1 = np.fft.fft2(window * normalized_ref_image)
+    fft2 = np.fft.fft2(window * normalized_image)
 
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 + offset) * np.abs(fft2 + offset))

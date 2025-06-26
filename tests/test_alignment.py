@@ -125,11 +125,6 @@ def _find_transform_error(ref_image: np.ndarray,
     scale_error = float(abs(1.0 - recovered_scale / scale))
     rotation_error = float(abs(rotation - recovered_rotation))
     translation_error = float(np.sqrt(np.sum(np.square(recovered_translation - offset))))
-    """
-    if translation_error > 1.0 or rotation_error > 0.3 or scale_error > 0.02:
-        plt.imsave(f'output/test_image_{offset[0]:.2f}_{offset[1]:.2f}_{rotation:.2f}_{scale:.2f}.png',
-                   noisy_test_image)
-    """
     return scale_error, rotation_error, translation_error
 
 
