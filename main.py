@@ -70,19 +70,7 @@ def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
     """
     Align multiple eclipse images based on translation.
     """
-    # Expand glob patterns to get actual file paths
-    expanded_image_paths = []
-    for path_pattern in images_to_align:
-        # If this is a direct file path
-        if os.path.exists(path_pattern):
-            expanded_image_paths.append(path_pattern)
-        else:
-            # Treat as a glob pattern
-            matching_files = glob.glob(path_pattern)
-            if matching_files:
-                expanded_image_paths.extend(matching_files)
-            else:
-                click.echo(f"Warning: Pattern '{path_pattern}' did not match any files", err=True)
+    expanded_image_paths = expand_glob_patterns(images_to_align)
 
     if not expanded_image_paths:
         click.echo("Error: No valid image files found to align", err=True)
@@ -104,6 +92,27 @@ def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
         click.echo(f"  Scale: {scale:.4f}")
         click.echo(f"  Rotation: {rotation_degrees:.4f} degrees")
         click.echo(f"  Translation: {translation_x:.4f}, {translation_y:.4f}")
+
+
+def expand_glob_patterns(paths: list[str]) -> list[str]:
+    """
+    Expand glob patterns and direct file paths to a list of valid image paths.
+    :param paths: List of paths or glob patterns to expand
+    :return: List of expanded image paths
+    """
+    expanded_image_paths = []
+    for path_pattern in paths:
+        # If this is a direct file path
+        if os.path.exists(path_pattern):
+            expanded_image_paths.append(path_pattern)
+        else:
+            # Treat as a glob pattern
+            matching_files = glob.glob(path_pattern)
+            if matching_files:
+                expanded_image_paths.extend(matching_files)
+            else:
+                click.echo(f"Warning: Pattern '{path_pattern}' did not match any files", err=True)
+    return expanded_image_paths
 
 
 if __name__ == '__main__':
