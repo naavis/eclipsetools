@@ -83,7 +83,7 @@ def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
 
     # Process all images in parallel using joblib
     results = list(tqdm(total=len(images_to_align),
-                        iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
+                        iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator')(
                             joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs)
                             for image_path in images_to_align
                         )))
