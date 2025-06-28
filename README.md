@@ -13,6 +13,17 @@ conda activate eclipsetools
 python main.py --help
 ```
 
+## Usage
+
+Run the main script to see available commands and options:
+
+```bash
+python main.py --help
+```
+
+The script caches many operations on disk to speed up processing.
+You can clear by removing the `.cache` directory.
+
 ## Tests
 
 Execute:

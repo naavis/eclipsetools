@@ -2,12 +2,15 @@ import cv2
 import numpy as np
 
 from eclipsetools.utils.circle_finder import DetectedCircle
+from eclipsetools.utils.memorycache import memory
 
 
+@memory.cache
 def hann_window_mask(shape: tuple) -> np.ndarray:
     return cv2.createHanningWindow(shape[::-1], cv2.CV_32F)
 
 
+@memory.cache
 def annulus_mask(shape: np.ndarray,
                  mask_center: tuple,
                  mask_radius: float) -> np.ndarray:

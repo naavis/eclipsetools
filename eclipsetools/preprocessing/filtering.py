@@ -1,7 +1,10 @@
 import cv2
 import numpy as np
 
+from eclipsetools.utils.memorycache import memory
 
+
+@memory.cache
 def rotational_blur(
         image: np.ndarray,
         sigma: float,
