@@ -138,10 +138,6 @@ def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: s
     :param output_dir: Directory to save preprocessed images.
     """
 
-    if not images_to_preprocess:
-        click.echo("Error: No valid image files found to preprocess", err=True)
-        return
-
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
 
     output_dir_abs = os.path.abspath(output_dir)
