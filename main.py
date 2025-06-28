@@ -122,7 +122,7 @@ def open_and_preprocess(image_path: str, output_dir: str):
               help='Directory to save preprocessed images.')
 def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: str):
     """
-    Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, including negative values.
+    Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, normalized to the range [0, 1].
     :param images_to_preprocess: Image paths to preprocess
     :param n_jobs: Number of parallel jobs to use for preprocessing. Default is -1 (use all available CPUs).
     :param output_dir: Directory to save preprocessed images.

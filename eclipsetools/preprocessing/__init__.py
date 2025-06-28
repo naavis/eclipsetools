@@ -11,7 +11,9 @@ def preprocess_for_alignment(rgb_image):
     assert moon is not None
     saturated_radius = masking.estimate_saturated_radius(moon, rgb_image)
     moon_mask_radius = 1.15 * (saturated_radius if saturated_radius else moon.radius)
-    return _mask_and_filter(image, moon.center, moon_mask_radius)
+    preproc = _mask_and_filter(image, moon.center, moon_mask_radius)
+    normalized = (preproc - preproc.min()) / np.ptp(preproc)
+    return normalized
 
 
 def _mask_and_filter(image: np.ndarray, moon_center: tuple, moon_mask_radius: float) -> np.ndarray:
