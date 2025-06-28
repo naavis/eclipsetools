@@ -5,6 +5,7 @@ from eclipsetools.utils.circle_finder import DetectedCircle
 
 
 def hann_window_mask(shape: tuple) -> np.ndarray:
+    assert len(shape) == 2, "Shape must be a 2D tuple (height, width)."
     return cv2.createHanningWindow(shape[::-1], cv2.CV_32F)
 
 
