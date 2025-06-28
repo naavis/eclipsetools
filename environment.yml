@@ -12,3 +12,5 @@ dependencies:
   - pytest-xdist=3.7.0
   - joblib=1.5.1
   - click=8.1.7
+  - tifffile=2025.6.11
+  - tqdm=4.67.1

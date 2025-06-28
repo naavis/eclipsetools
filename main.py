@@ -1,14 +1,21 @@
-import glob
 import os
 
 import click
 import cv2
 import joblib
 import numpy as np
+import tifffile
+from joblib import Parallel
+from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
 from eclipsetools.preprocessing import preprocess_for_alignment
 from eclipsetools.utils.raw_reader import open_raw_image
+
+
+@click.group()
+def main():
+    pass
 
 
 def align_single_image(reference_image, image_path, low_pass_sigma):
@@ -58,7 +65,7 @@ def save_output(output_dir, name_prefix, aligned_image, preprocessed_image):
                         np.max(preprocessed_image) - np.min(preprocessed_image))) * 255).astype(np.uint8))
 
 
-@click.command()
+@main.command()
 @click.argument('reference_image', type=click.Path(exists=True))
 @click.argument('images_to_align', nargs=-1, required=True)
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
@@ -66,11 +73,10 @@ def save_output(output_dir, name_prefix, aligned_image, preprocessed_image):
               default=0.03,
               type=float,
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
-def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
+def align(reference_image, images_to_align, n_jobs, low_pass_sigma):
     """
     Align multiple eclipse images based on translation.
     """
-
     ref_image = preprocess_for_alignment(open_raw_image(reference_image))
 
     click.echo(f"Processing {len(images_to_align)} images...")
@@ -89,25 +95,47 @@ def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
         click.echo(f"  Translation: {translation_x:.4f}, {translation_y:.4f}")
 
 
-def expand_glob_patterns(paths: list[str]) -> list[str]:
+def save_tiff(image: np.ndarray, output_path: str):
     """
-    Expand glob patterns and direct file paths to a list of valid image paths.
-    :param paths: List of paths or glob patterns to expand
-    :return: List of expanded image paths
+    Save image to the specified output path as tiff
+    :param image: Image to save
+    :param output_path: Path where the image will be saved
+    :return: None
     """
-    expanded_image_paths = []
-    for path_pattern in paths:
-        # If this is a direct file path
-        if os.path.exists(path_pattern):
-            expanded_image_paths.append(path_pattern)
-        else:
-            # Treat as a glob pattern
-            matching_files = glob.glob(path_pattern)
-            if matching_files:
-                expanded_image_paths.extend(matching_files)
-            else:
-                click.echo(f"Warning: Pattern '{path_pattern}' did not match any files", err=True)
-    return expanded_image_paths
+    tifffile.imwrite(output_path, image, compression='zlib')
+
+
+def open_and_preprocess(image_path):
+    rgb_image = open_raw_image(image_path)
+    image_preproc = preprocess_for_alignment(rgb_image)
+
+    orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
+    output_filename = os.path.join('output', f"{orig_filename_without_ext}_preproc.tiff")
+    # click.echo(f'Saving image to {output_filename}...')
+    save_tiff(image_preproc, output_filename)
+
+
+# TODO: Add option for output path
+@main.command()
+@click.argument('images_to_preprocess', nargs=-1, required=True)
+@click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
+def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int):
+    """
+    Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, including negative values.
+    :param images_to_preprocess: Image paths to preprocess
+    :param n_jobs: Number of parallel jobs to use for preprocessing. Default is -1 (use all available CPUs).
+    """
+
+    if not images_to_preprocess:
+        click.echo("Error: No valid image files found to preprocess", err=True)
+        return
+
+    click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
+
+    list(
+        tqdm(total=len(images_to_preprocess),
+             iterable=Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
+                 joblib.delayed(open_and_preprocess)(path) for path in images_to_preprocess)))
 
 
 if __name__ == '__main__':
