@@ -6,13 +6,13 @@ from matplotlib import pyplot as plt
 
 import eclipsetools.preprocessing
 from eclipsetools.preprocessing.masking import hann_window_mask
-from eclipsetools.utils.raw_reader import open_raw_image
+from eclipsetools.utils.image_reader import open_image
 
 SAVE_IMAGES = True
 
 
 def main():
-    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
+    ref_image = open_image(r'tests\images\eclipse_5ms.CR3')
 
     crop_margin = 500
 

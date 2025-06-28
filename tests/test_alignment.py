@@ -3,7 +3,7 @@ import numpy as np
 
 from eclipsetools import preprocessing
 from eclipsetools.alignment import find_translation, find_transform
-from eclipsetools.utils.raw_reader import open_raw_image
+from eclipsetools.utils.image_reader import open_image
 
 # Generate a fixed test seed to ensure reproducible tests
 TEST_SEED = 122807528840384100672342137672332424406
@@ -11,7 +11,7 @@ TEST_SEED = 122807528840384100672342137672332424406
 
 def test_align_parametrized(align_params):
     """Individual test case for alignment with specific parameters."""
-    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
+    ref_image = open_image(r'tests\images\eclipse_5ms.CR3')
     offset, rotation, scale = align_params
 
     # No noise for this test, same as in the original test
@@ -28,7 +28,7 @@ def test_align_parametrized(align_params):
 
 def test_translate_parametrized(translate_params):
     """Individual test case for translation with specific parameters."""
-    ref_image = open_raw_image(r'tests\images\eclipse_5ms.CR3')
+    ref_image = open_image(r'tests\images\eclipse_5ms.CR3')
     offset = translate_params
 
     # No noise for this test, same as in the original test

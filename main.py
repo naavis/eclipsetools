@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
 from eclipsetools.preprocessing import preprocess_for_alignment
-from eclipsetools.utils.raw_reader import open_raw_image
+from eclipsetools.utils.image_reader import open_image
 
 
 @click.group()
@@ -27,7 +27,7 @@ def align_single_image(reference_image, image_path, low_pass_sigma, output_dir):
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
     :return: Tuple of image path and translation vector (dy, dx)
     """
-    raw_image = open_raw_image(image_path)
+    raw_image = open_image(image_path)
     image_to_align = preprocess_for_alignment(raw_image)
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image,
@@ -71,7 +71,7 @@ def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
     """
     Align multiple eclipse images to reference image.
     """
-    ref_image = preprocess_for_alignment(open_raw_image(reference_image))
+    ref_image = preprocess_for_alignment(open_image(reference_image))
 
     click.echo(f"Processing {len(images_to_align)} images...")
 
@@ -107,7 +107,7 @@ def save_tiff(image: np.ndarray, output_path: str):
 
 
 def open_and_preprocess(image_path: str, output_dir: str):
-    rgb_image = open_raw_image(image_path)
+    rgb_image = open_image(image_path)
     image_preproc = preprocess_for_alignment(rgb_image)
 
     orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
