@@ -79,7 +79,7 @@ def save_output(output_dir, name_prefix, aligned_image, preprocessed_image):
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
 def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
     """
-    Align multiple eclipse images based on translation.
+    Align multiple eclipse images to reference image.
     """
     ref_image = preprocess_for_alignment(open_raw_image(reference_image))
 
