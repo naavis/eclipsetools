@@ -110,6 +110,9 @@ def open_and_preprocess(image_path: str, output_dir: str):
     rgb_image = open_image(image_path)
     image_preproc = preprocess_for_alignment(rgb_image)
 
+    # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
+    image_preproc = np.clip((image_preproc - image_preproc.mean()) / image_preproc.std() + 0.5, 0.0, 1.0)
+
     orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
     output_filename = os.path.join(output_dir, f"{orig_filename_without_ext}_preproc.tiff")
     save_tiff(image_preproc, output_filename)
