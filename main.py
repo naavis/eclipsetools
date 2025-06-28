@@ -18,9 +18,10 @@ def main():
     pass
 
 
-def align_single_image(reference_image, image_path, low_pass_sigma):
+def align_single_image(reference_image, image_path, low_pass_sigma, output_dir):
     """
     Process a single image alignment operation.
+    :param output_dir: Directory to save the output images
     :param reference_image: Preprocessed reference image data
     :param image_path: Path to the image file to align
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
@@ -48,10 +49,11 @@ def align_single_image(reference_image, image_path, low_pass_sigma):
     aligned_image = cv2.warpAffine(raw_image, transform_matrix, (image_to_align.shape[1], image_to_align.shape[0]),
                                    flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
 
-    output_dir = 'output'
-    os.makedirs(output_dir, exist_ok=True)
-    name_prefix = os.path.splitext(os.path.basename(image_path))[0]
-    save_output(output_dir, name_prefix, aligned_image, image_to_align)
+    # Save the aligned image as a TIFF file
+    orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
+    output_filename = os.path.join(output_dir, f"{orig_filename_without_ext}_aligned.tiff")
+    save_tiff(aligned_image, output_filename)
+
     return image_path, float(scale), float(rotation_degrees), (float(translation_y), float(translation_x))
 
 
@@ -68,12 +70,14 @@ def save_output(output_dir, name_prefix, aligned_image, preprocessed_image):
 @main.command()
 @click.argument('reference_image', type=click.Path(exists=True))
 @click.argument('images_to_align', nargs=-1, required=True)
+@click.option('--output-dir', default='output', type=click.Path(exists=False),
+              help='Directory to save preprocessed images.')
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
 @click.option('--low-pass-sigma',
               default=0.03,
               type=float,
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
-def align(reference_image, images_to_align, n_jobs, low_pass_sigma):
+def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
     """
     Align multiple eclipse images based on translation.
     """
@@ -81,9 +85,15 @@ def align(reference_image, images_to_align, n_jobs, low_pass_sigma):
 
     click.echo(f"Processing {len(images_to_align)} images...")
 
+    output_dir_abs = os.path.abspath(output_dir)
+    click.echo(f'Writing preprocessed images to directory: {output_dir_abs}')
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir_abs, exist_ok=True)
+
     # Process all images in parallel using joblib
     results = joblib.Parallel(n_jobs=n_jobs, prefer='threads')(
-        joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma)
+        joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs)
         for image_path in images_to_align
     )
 
