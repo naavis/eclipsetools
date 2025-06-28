@@ -70,20 +70,15 @@ def main(reference_image, images_to_align, n_jobs, low_pass_sigma):
     """
     Align multiple eclipse images based on translation.
     """
-    expanded_image_paths = expand_glob_patterns(images_to_align)
-
-    if not expanded_image_paths:
-        click.echo("Error: No valid image files found to align", err=True)
-        return
 
     ref_image = preprocess_for_alignment(open_raw_image(reference_image))
 
-    click.echo(f"Processing {len(expanded_image_paths)} images...")
+    click.echo(f"Processing {len(images_to_align)} images...")
 
     # Process all images in parallel using joblib
     results = joblib.Parallel(n_jobs=n_jobs, prefer='threads')(
         joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma)
-        for image_path in expanded_image_paths
+        for image_path in images_to_align
     )
 
     # Print results
