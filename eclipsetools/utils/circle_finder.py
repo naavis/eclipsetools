@@ -3,8 +3,6 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from eclipsetools.utils.memorycache import memory
-
 
 @dataclass
 class DetectedCircle:
@@ -12,7 +10,6 @@ class DetectedCircle:
     radius: float
 
 
-@memory.cache
 def find_circle(
         image: np.ndarray,
         min_radius: int,

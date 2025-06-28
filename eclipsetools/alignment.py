@@ -2,10 +2,8 @@ import cv2
 import numpy as np
 
 from eclipsetools.preprocessing.masking import hann_window_mask
-from eclipsetools.utils.memorycache import memory
 
 
-@memory.cache
 def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     """
     Find the translation between two images using phase correlation.
@@ -59,7 +57,6 @@ def phase_correlate_skimage(img_a: np.ndarray, img_b: np.ndarray, window: np.nda
     return float(-shift_y), float(-shift_x)
 
 
-@memory.cache
 def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -> (
         tuple)[float, float, tuple[float, float]]:
     """
