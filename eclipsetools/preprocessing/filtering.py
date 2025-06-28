@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 
 def rotational_blur(
@@ -25,7 +26,7 @@ def rotational_blur(
         flags=cv2.INTER_LANCZOS4 | cv2.WARP_POLAR_LINEAR)
 
     sigma_pixels = sigma * polar_image.shape[0] / 360.0
-    blurred_polar = cv2.GaussianBlur(src=polar_image, ksize=(1, -1), sigmaX=0, sigmaY=sigma_pixels)
+    blurred_polar = gaussian_filter(polar_image, sigma=sigma_pixels, mode='wrap', axes=(0,))
 
     return cv2.linearPolar(
         src=blurred_polar,
