@@ -111,7 +111,6 @@ def open_and_preprocess(image_path: str, output_dir: str):
 
     orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
     output_filename = os.path.join(output_dir, f"{orig_filename_without_ext}_preproc.tiff")
-    # click.echo(f'Saving image to {output_filename}...')
     save_tiff(image_preproc, output_filename)
 
 
