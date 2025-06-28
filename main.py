@@ -92,10 +92,11 @@ def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
     os.makedirs(output_dir_abs, exist_ok=True)
 
     # Process all images in parallel using joblib
-    results = joblib.Parallel(n_jobs=n_jobs, prefer='threads')(
-        joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs)
-        for image_path in images_to_align
-    )
+    results = list(tqdm(total=len(images_to_align),
+                        iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
+                            joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs)
+                            for image_path in images_to_align
+                        )))
 
     # Print results
     for image_path, scale, rotation_degrees, (translation_y, translation_x) in results:
