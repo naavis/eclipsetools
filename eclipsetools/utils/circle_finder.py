@@ -17,18 +17,17 @@ def find_circle(
     assert image.ndim == 2, "Input image must be grayscale (2D array)."
 
     detected_circles = cv2.HoughCircles(
-        image=(image * 255).astype(np.uint8),
+        image=((image ** 0.5) * 255).astype(np.uint8),
         method=cv2.HOUGH_GRADIENT,
         dp=3,  # Inverse of accumulator resolution, i.e. 3 means 1/3 resolution of original image
         minDist=image.shape[0] / 16.0,  # Minimum distance between found circles
         param1=50,  # Upper threshold for Canny edge detector
-        param2=10,  # Accumulator threshold for finding images (smaller -> more circles detected)
+        param2=30,  # Accumulator threshold for finding images (smaller -> more circles detected)
         minRadius=min_radius,
         maxRadius=max_radius)
 
     if detected_circles is not None:
         # _plot_circles(detected_circles, image)
-
         circle = detected_circles[0][0]
         return DetectedCircle(center=(circle[1], circle[0]), radius=float(circle[2]))
     else:
