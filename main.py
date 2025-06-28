@@ -105,25 +105,27 @@ def save_tiff(image: np.ndarray, output_path: str):
     tifffile.imwrite(output_path, image, compression='zlib')
 
 
-def open_and_preprocess(image_path):
+def open_and_preprocess(image_path: str, output_dir: str):
     rgb_image = open_raw_image(image_path)
     image_preproc = preprocess_for_alignment(rgb_image)
 
     orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
-    output_filename = os.path.join('output', f"{orig_filename_without_ext}_preproc.tiff")
+    output_filename = os.path.join(output_dir, f"{orig_filename_without_ext}_preproc.tiff")
     # click.echo(f'Saving image to {output_filename}...')
     save_tiff(image_preproc, output_filename)
 
 
-# TODO: Add option for output path
 @main.command()
 @click.argument('images_to_preprocess', nargs=-1, required=True)
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
-def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int):
+@click.option('--output-dir', default='output', type=click.Path(exists=False),
+              help='Directory to save preprocessed images.')
+def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: str):
     """
     Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, including negative values.
     :param images_to_preprocess: Image paths to preprocess
     :param n_jobs: Number of parallel jobs to use for preprocessing. Default is -1 (use all available CPUs).
+    :param output_dir: Directory to save preprocessed images.
     """
 
     if not images_to_preprocess:
@@ -132,10 +134,16 @@ def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int):
 
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
 
+    output_dir_abs = os.path.abspath(output_dir)
+    click.echo('Writing preprocessed images to directory: ' + output_dir_abs)
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir_abs, exist_ok=True)
+
     list(
         tqdm(total=len(images_to_preprocess),
              iterable=Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
-                 joblib.delayed(open_and_preprocess)(path) for path in images_to_preprocess)))
+                 joblib.delayed(open_and_preprocess)(path, output_dir_abs) for path in images_to_preprocess)))
 
 
 if __name__ == '__main__':
