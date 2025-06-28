@@ -23,7 +23,7 @@ def rotational_blur(
         src=image,
         center=(center[1], center[0]),
         maxRadius=max_radius,
-        flags=cv2.INTER_LANCZOS4 | cv2.WARP_POLAR_LINEAR)
+        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LINEAR)
 
     sigma_pixels = sigma * polar_image.shape[0] / 360.0
     blurred_polar = gaussian_filter(polar_image, sigma=sigma_pixels, mode='wrap', axes=(0,))
@@ -32,4 +32,4 @@ def rotational_blur(
         src=blurred_polar,
         center=(center[1], center[0]),
         maxRadius=max_radius,
-        flags=cv2.INTER_LANCZOS4 | cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP)
+        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP)
