@@ -126,6 +126,8 @@ def _simple_phase_correlation(ref_image, image):
 
     shift_y, shift_x = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
 
+    # TODO: Add subpixel alignment
+
     # Shifts peak coordinates to wrap around
     if shift_y > phase_correlation.shape[0] // 2:
         shift_y -= phase_correlation.shape[0]
