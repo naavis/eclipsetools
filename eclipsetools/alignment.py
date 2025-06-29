@@ -18,11 +18,16 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
 
 
 def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
-    normalized_ref_image = (img_a - np.mean(img_a)) / np.std(img_a)
-    normalized_image = (img_b - np.mean(img_b)) / np.std(img_b)
     window = hann_window_mask(img_a.shape)
-    fft1 = np.fft.fft2(window * normalized_ref_image)
-    fft2 = np.fft.fft2(window * normalized_image)
+    img_a_win = window * img_a
+    img_b_win = window * img_b
+
+    img_a_norm = (img_a_win - img_a_win.mean()) / img_a_win.std()
+    img_b_norm = (img_b_win - img_b_win.mean()) / img_b_win.std()
+
+    fft1 = np.fft.fft2(img_a_norm)
+    fft2 = np.fft.fft2(img_b_norm)
+
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
@@ -110,15 +115,18 @@ def _pad_with_zeros(image: np.ndarray) -> np.ndarray:
     return padded
 
 
-def _simple_phase_correlation(ref_image, image):
-    assert ref_image.shape == image.shape, "Reference and image must have the same shape."
+def _simple_phase_correlation(img_a, img_b):
+    assert img_a.shape == img_b.shape, "Reference and image must have the same shape."
 
-    normalized_ref_image = (ref_image - np.mean(ref_image)) / np.std(ref_image)
-    normalized_image = (image - np.mean(image)) / np.std(image)
+    window = hann_window_mask(img_a.shape)
+    img_a_win = window * img_a
+    img_b_win = window * img_b
 
-    window = hann_window_mask(ref_image.shape)
-    fft1 = np.fft.fft2(window * normalized_ref_image)
-    fft2 = np.fft.fft2(window * normalized_image)
+    img_a_norm = (img_a_win - img_a_win.mean()) / img_a_win.std()
+    img_b_norm = (img_b_win - img_b_win.mean()) / img_b_win.std()
+
+    fft1 = np.fft.fft2(img_a_norm)
+    fft2 = np.fft.fft2(img_b_norm)
 
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 + offset) * np.abs(fft2 + offset))
