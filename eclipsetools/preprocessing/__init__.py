@@ -22,6 +22,13 @@ def _mask_and_filter(image: np.ndarray, moon_center: tuple, moon_mask_radius: fl
                                               center=moon_center)
     filtered_image = image - blurred_image
 
-    annulus_mask = masking.annulus_mask(image.shape, moon_center, moon_mask_radius)
+    # We limit the outer radius of the annulus mask to avoid intersecting the image edges.
+    shortest_distance_to_edge = min(moon_center[0],
+                                    moon_center[1],
+                                    image.shape[0] - moon_center[0],
+                                    image.shape[1] - moon_center[1])
+    mask_outer_radius = min(2.0 * moon_mask_radius, shortest_distance_to_edge * 0.9)
+
+    annulus_mask = masking.annulus_mask(image.shape, moon_center, moon_mask_radius, mask_outer_radius)
     image_for_alignment = annulus_mask * filtered_image
     return image_for_alignment

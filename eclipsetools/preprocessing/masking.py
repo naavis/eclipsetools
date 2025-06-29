@@ -11,19 +11,20 @@ def hann_window_mask(shape: tuple) -> np.ndarray:
 
 def annulus_mask(shape: np.ndarray,
                  mask_center: tuple,
-                 mask_radius: float) -> np.ndarray:
+                 inner_radius: float,
+                 outer_radius: float) -> np.ndarray:
     mask = np.zeros(shape, dtype=np.float32)
 
     cv2.circle(
         img=mask,
         center=(int(mask_center[1]), int(mask_center[0])),
-        radius=int(mask_radius * 2.0),
+        radius=int(outer_radius),
         color=(1.0,),
         thickness=-1)
     cv2.circle(
         img=mask,
         center=(int(mask_center[1]), int(mask_center[0])),
-        radius=int(mask_radius),
+        radius=int(inner_radius),
         color=(0.0,),
         thickness=-1)
     cv2.GaussianBlur(
