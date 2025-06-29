@@ -76,7 +76,7 @@ def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
     click.echo(f"Processing {len(images_to_align)} images...")
 
     output_dir_abs = os.path.abspath(output_dir)
-    click.echo(f'Writing preprocessed images to directory: {output_dir_abs}')
+    click.echo(f'Writing aligned images to directory: {output_dir_abs}')
 
     # Ensure the output directory exists
     os.makedirs(output_dir_abs, exist_ok=True)
