@@ -1,8 +1,8 @@
 import os
 
+import cv2
 import numpy as np
 import rawpy
-import tifffile
 
 
 def open_image(path: str) -> np.ndarray:
@@ -15,7 +15,7 @@ def open_image(path: str) -> np.ndarray:
 
     if ext in ['.tiff', '.tif']:
         # Read TIFF file
-        image = tifffile.imread(path)
+        image = cv2.cvtColor(cv2.imread(path, flags=cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB)
 
         # Convert to float32 and normalize
         if image.dtype == np.uint8:
