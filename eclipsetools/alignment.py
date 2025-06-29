@@ -17,7 +17,7 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     return np.array(_phase_correlate_with_low_pass(ref_image, image, low_pass_sigma))
 
 
-def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
+def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float = None) -> np.ndarray:
     window = hann_window_mask(img_a.shape)
     img_a_win = window * img_a
     img_b_win = window * img_b
@@ -31,9 +31,11 @@ def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pas
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
 
-    gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
-
-    phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
+    if low_pass_sigma is None:
+        phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
+    else:
+        gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
+        phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
     subpixel_peak = _center_of_mass(phase_correlation, (int(initial_peak[0]), int(initial_peak[1])), 4)
@@ -77,7 +79,7 @@ def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -
     image_fft_log_polar = _log_polar_fft(image_pad, radius)[:shape[0] // 2, :]
 
     # Find shifts in the log-polar FFTs using phase correlation
-    shift_y, shift_x = _simple_phase_correlation(ref_fft_log_polar, image_fft_log_polar)
+    shift_y, shift_x = _phase_correlate_with_low_pass(ref_fft_log_polar, image_fft_log_polar)
 
     # Recover rotation from the correlation result
     rotation_degrees = 360.0 * shift_y / ref_fft_log_polar.shape[0]
