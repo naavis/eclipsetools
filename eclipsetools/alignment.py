@@ -14,12 +14,10 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
         and the reported translation is close to zero.
     :return: Translation vector (dy, dx) indicating how much the second image is shifted relative to the first.
     """
-    # return np.array(phase_correlate_opencv(ref_image, image))
-    # return np.array(phase_correlate_skimage(ref_image, image))
-    return np.array(phase_correlate_with_low_pass(ref_image, image, low_pass_sigma))
+    return np.array(_phase_correlate_with_low_pass(ref_image, image, low_pass_sigma))
 
 
-def phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
+def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
     normalized_ref_image = (img_a - np.mean(img_a)) / np.std(img_a)
     normalized_image = (img_b - np.mean(img_b)) / np.std(img_b)
     window = hann_window_mask(img_a.shape)
@@ -41,20 +39,6 @@ def phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass
     subpixel_peak = np.where(subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak)
 
     return -subpixel_peak
-
-
-def phase_correlate_opencv(img_a: np.ndarray, img_b: np.ndarray, window: np.ndarray = None) -> tuple[float, float]:
-    correlation_result = cv2.phaseCorrelate(img_a, img_b, window)
-    (shift_x, shift_y), _correlation = correlation_result
-    return float(shift_y), float(shift_x)
-
-
-def phase_correlate_skimage(img_a: np.ndarray, img_b: np.ndarray, window: np.ndarray = None) -> tuple[float, float]:
-    import skimage.registration
-    if window is not None:
-        raise NotImplementedError("Windowing is not supported in skimage's phase_cross_correlation.")
-    (shift_y, shift_x), _error, _phase_diff = skimage.registration.phase_cross_correlation(img_a, img_b)
-    return float(-shift_y), float(-shift_x)
 
 
 def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -> (
