@@ -60,7 +60,8 @@ def pytest_generate_tests(metafunc):
 
         for i in range(num_tests):
             test_cases.append((offsets[i], rotations[i], scales[i]))
-            ids.append(f"offset={offsets[i]}_rot={rotations[i]}_scale={scales[i]}")
+            ids.append(
+                f"offset=({offsets[i][0]:.2f}, {offsets[i][1]:.2f}) rot={rotations[i]:.2f} scale={scales[i]:.2f}")
 
         metafunc.parametrize("align_params", test_cases, ids=ids)
 
@@ -78,7 +79,7 @@ def pytest_generate_tests(metafunc):
 
         for i in range(num_tests):
             test_cases.append(offsets[i])
-            ids.append(f"offset=({offsets[i][0]:.1f},{offsets[i][1]:.1f})")
+            ids.append(f"offset=({offsets[i][0]:.1f}, {offsets[i][1]:.1f})")
 
         metafunc.parametrize("translate_params", test_cases, ids=ids)
 
