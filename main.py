@@ -20,17 +20,22 @@ def main():
     pass
 
 
-def align_single_image(reference_image, image_path, low_pass_sigma, output_dir):
+def align_single_image(reference_image: np.ndarray,
+                       image_path: str,
+                       low_pass_sigma: float,
+                       output_dir: str,
+                       annulus_mask: bool) -> tuple[str, float, float, tuple[float, float]]:
     """
     Process a single image alignment operation.
     :param output_dir: Directory to save the output images
     :param reference_image: Preprocessed reference image data
     :param image_path: Path to the image file to align
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
+    :param annulus_mask: Whether to mask out area outside the corona in addition to the moon.
     :return: Tuple of image path and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
-    image_to_align = preprocess_for_alignment(raw_image)
+    image_to_align = preprocess_for_alignment(raw_image, annulus_mask)
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image,
         image_to_align,
@@ -69,11 +74,13 @@ def align_single_image(reference_image, image_path, low_pass_sigma, output_dir):
               default=0.03,
               type=float,
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
-def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
+@click.option('--annulus-mask/--no-annulus-mask', default=True,
+              help='Mask out area outside the corona in addition to the moon.')
+def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma, annulus_mask):
     """
     Align multiple eclipse images to reference image.
     """
-    ref_image = preprocess_for_alignment(open_image(reference_image))
+    ref_image = preprocess_for_alignment(open_image(reference_image), annulus_mask)
 
     click.echo(f"Processing {len(images_to_align)} images...")
 
@@ -86,7 +93,8 @@ def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma):
     # Process all images in parallel using joblib
     results = list(tqdm(total=len(images_to_align),
                         iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
-                            joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs)
+                            joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs,
+                                                               annulus_mask)
                             for image_path in images_to_align
                         )))
 
@@ -110,9 +118,9 @@ def save_tiff(image: np.ndarray, output_path: str):
     tifffile.imwrite(output_path, image, compression='zlib')
 
 
-def open_and_preprocess(image_path: str, output_dir: str):
+def open_and_preprocess(image_path: str, output_dir: str, annulus_mask: bool):
     rgb_image = open_image(image_path)
-    image_preproc = preprocess_for_alignment(rgb_image)
+    image_preproc = preprocess_for_alignment(rgb_image, annulus_mask)
 
     # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
     image_preproc = np.clip((image_preproc - image_preproc.mean()) / image_preproc.std() + 0.5, 0.0, 1.0)
@@ -127,12 +135,15 @@ def open_and_preprocess(image_path: str, output_dir: str):
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
 @click.option('--output-dir', default='output', type=click.Path(exists=False),
               help='Directory to save preprocessed images.')
-def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: str):
+@click.option('--annulus-mask/--no-annulus-mask', default=True,
+              help='Mask out area outside the corona in addition to the moon.')
+def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: str, annulus_mask: bool):
     """
     Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
     :param images_to_preprocess: Image paths to preprocess
     :param n_jobs: Number of parallel jobs to use for preprocessing. Default is -1 (use all available CPUs).
     :param output_dir: Directory to save preprocessed images.
+    :param annulus_mask: Mask out area outside the corona in addition to the moon.
     """
 
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
@@ -146,7 +157,8 @@ def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: s
     list(
         tqdm(total=len(images_to_preprocess),
              iterable=Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
-                 joblib.delayed(open_and_preprocess)(path, output_dir_abs) for path in images_to_preprocess)))
+                 joblib.delayed(open_and_preprocess)(path, output_dir_abs, annulus_mask) for path in
+                 images_to_preprocess)))
 
 
 @main.command()
