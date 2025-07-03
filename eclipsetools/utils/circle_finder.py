@@ -17,7 +17,7 @@ def find_circle(
     assert image.ndim == 2, "Input image must be grayscale (2D array)."
 
     detected_circles = cv2.HoughCircles(
-        image=((image ** 0.5) * 255).astype(np.uint8),
+        image=((np.clip(image, 0.0, 1.0) ** 0.5) * 255).astype(np.uint8),
         method=cv2.HOUGH_GRADIENT,
         dp=3,  # Inverse of accumulator resolution, i.e. 3 means 1/3 resolution of original image
         minDist=image.shape[0] / 16.0,  # Minimum distance between found circles
