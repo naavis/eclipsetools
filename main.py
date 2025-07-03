@@ -6,11 +6,11 @@ import joblib
 import numpy as np
 import tifffile
 from joblib import Parallel
-from sklearn.linear_model import RANSACRegressor
 from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
 from eclipsetools.preprocessing import preprocess_for_alignment
+from eclipsetools.stacking import linear_fit, weight_function_sigmoid
 from eclipsetools.utils.image_reader import open_image
 
 
@@ -176,25 +176,6 @@ def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     stacked_image = np.clip(weighted_sum / total_weights, 0.0, 1.0)
     click.echo(f"Saving stacked image to {output_file}")
     tifffile.imwrite(output_file, stacked_image, compression='zlib')
-
-
-def linear_fit(x, y):
-    valid_points = (x > 0.1) & (x < 0.8) & (y > 0.1) & (y < 0.8)
-    x_valid = x[valid_points]
-    y_valid = y[valid_points]
-    model = RANSACRegressor()
-    model.fit(x_valid.reshape(-1, 1), y_valid)
-    linear_coef = model.estimator_.coef_[0]
-    linear_intercept = model.estimator_.intercept_
-    return linear_coef, linear_intercept
-
-
-def sigmoid_weight(x, center=0.5, width=0.1):
-    return 1 / (1 + np.exp(-(x - center) / width))
-
-
-def weight_function_sigmoid(arr):
-    return np.minimum(sigmoid_weight(arr, 0.09, 0.012), 1 - sigmoid_weight(arr, 0.75, 0.03))
 
 
 if __name__ == '__main__':
