@@ -9,7 +9,7 @@ from eclipsetools.preprocessing.masking import circle_mask
 def preprocess_for_alignment(rgb_image: np.ndarray, annulus_mask: bool) -> np.ndarray:
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
     moon = eclipsetools.utils.circle_finder.find_circle(image, min_radius=400, max_radius=600)
-    assert moon is not None
+    assert moon is not None, "Moon not found in the image. Please check the input image."
     saturated_radius = masking.estimate_saturated_radius(moon, rgb_image)
     moon_mask_radius = 1.2 * (saturated_radius if saturated_radius else moon.radius)
     preproc = _mask_and_filter(image, moon.center, moon_mask_radius, annulus_mask)
