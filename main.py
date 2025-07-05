@@ -60,6 +60,7 @@ def align_single_image(reference_image: np.ndarray,
     transform_matrix = (rotation_scale_matrix @ translation_matrix)[:2, :]
     aligned_image = cv2.warpAffine(raw_image, transform_matrix, (image_to_align.shape[1], image_to_align.shape[0]),
                                    flags=cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+    np.clip(aligned_image, 0.0, 1.0, out=aligned_image)  # Ensure values are in the range [0, 1]
 
     # Save the aligned image as a TIFF file
     orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
