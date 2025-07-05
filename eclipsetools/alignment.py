@@ -143,7 +143,7 @@ def _simple_phase_correlation(img_a, img_b):
     if shift_x > phase_correlation.shape[1] // 2:
         shift_x -= phase_correlation.shape[1]
 
-    return shift_y, shift_x
+    return float(shift_y), float(shift_x)
 
 
 def _log_polar_fft(image: np.ndarray, radius: float) -> np.ndarray:
