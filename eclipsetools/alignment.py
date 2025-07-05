@@ -51,7 +51,7 @@ def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -
     """
     Find the scale, rotation, and translation between two images.
 
-    This function uses a multi-step approach:
+    This function uses a multistep approach:
     1. Find scale and rotation using log-polar transform and phase correlation
     2. Apply the found scale and rotation to the image
     3. Find the translation using phase correlation on the transformed image
