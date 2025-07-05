@@ -35,7 +35,7 @@ def test_translate_parametrized(translate_params):
     noise_image = np.zeros_like(ref_image, dtype=np.float32)
 
     # Call the test function directly without joblib parallelization
-    error = _find_test_image_translation(ref_image, preprocessing.preprocess_for_alignment(ref_image), offset,
+    error = _find_test_image_translation(ref_image, preprocessing.preprocess_for_alignment(ref_image, 1.2, 2.0), offset,
                                          noise_image)
 
     assert error is not None and error < 0.2, f'Translation error too high for offset {offset}: {error}'
@@ -99,7 +99,7 @@ def _find_test_image_translation(ref_image: np.ndarray,
         dsize=(ref_image.shape[1], ref_image.shape[0]))
     # We add some Gaussian noise to the translated image to simulate varying noise in real images
     noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0)
-    translated_test_image = preprocessing.preprocess_for_alignment(noisy_test_image)
+    translated_test_image = preprocessing.preprocess_for_alignment(noisy_test_image, 1.2, 2.0)
     found_translation = find_translation(ref_image_preproc, translated_test_image, low_pass_sigma=0.2)
     error = np.sqrt(np.sum(np.square(found_translation - offset)))
     return error
@@ -114,13 +114,13 @@ def _find_transform_error(ref_image: np.ndarray,
     crop_margin = 500
     # Cropping has to be done before preprocessing to avoid artifacts at the edges
     ref_image_preproc = preprocessing.preprocess_for_alignment(
-        ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :])
+        ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :], 1.2, 2.0)
 
     test_image = _transform_image(ref_image, offset, rotation, scale)
     noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0, dtype=np.float32)
 
     preproc_image = preprocessing.preprocess_for_alignment(
-        noisy_test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :])
+        noisy_test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :], 1.2, 2.0)
 
     recovered_scale, recovered_rotation, recovered_translation = find_transform(ref_image_preproc, preproc_image, 0.2)
     scale_error = float(abs(1.0 - recovered_scale / scale))
