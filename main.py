@@ -25,7 +25,9 @@ def align_single_image(reference_image: np.ndarray,
                        low_pass_sigma: float,
                        output_dir: str,
                        mask_inner_radius: float,
-                       mask_outer_radius: float) -> tuple[str, float, float, tuple[float, float]]:
+                       mask_outer_radius: float,
+                       save_preprocessed_post_alignment_images: bool = False) -> tuple[str, float, float, tuple[float,
+float]]:
     """
     Process a single image alignment operation.
     :param output_dir: Directory to save the output images
@@ -34,6 +36,7 @@ def align_single_image(reference_image: np.ndarray,
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
     :param mask_inner_radius: Inner radius of the annulus mask in multiples of the moon radius.
     :param mask_outer_radius: Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.
+    :param save_preprocessed_post_alignment_images: If true, save preprocessed images after alignment.
     :return: Tuple of image path and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
@@ -63,6 +66,21 @@ def align_single_image(reference_image: np.ndarray,
     output_filename = os.path.join(output_dir, f"{orig_filename_without_ext}_aligned.tiff")
     save_tiff(aligned_image, output_filename)
 
+    if save_preprocessed_post_alignment_images:
+        # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
+        preproc_norm = np.clip((image_to_align - image_to_align.mean()) / image_to_align.std() + 0.5,
+                               0.0,
+                               1.0,
+                               dtype=np.float32)
+        aligned_preproc = cv2.warpAffine(preproc_norm,
+                                         transform_matrix,
+                                         (preproc_norm.shape[1], preproc_norm.shape[0]),
+                                         flags=cv2.INTER_LINEAR,
+                                         borderMode=cv2.BORDER_CONSTANT,
+                                         borderValue=(0, 0, 0))
+        preproc_aligned_filename = os.path.join(output_dir, f"{orig_filename_without_ext}_aligned_preproc.tiff")
+        save_tiff(aligned_preproc, preproc_aligned_filename)
+
     return image_path, float(scale), float(rotation_degrees), (float(translation_y), float(translation_x))
 
 
@@ -80,7 +98,16 @@ def align_single_image(reference_image: np.ndarray,
                                                                    'the moon radius.')
 @click.option('--mask-outer-radius', default=2.0, type=float, help='Outer radius of the annulus mask in multiples of '
                                                                    'the inner radius. Set to -1 to only mask the moon.')
-def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma, mask_inner_radius, mask_outer_radius):
+@click.option('--save-preprocessed-post-alignment-images', is_flag=True,
+              help='If set, saves preprocessed images after alignment. Useful for troubleshooting alignment issues.')
+def align(reference_image: str,
+          images_to_align: str,
+          output_dir: str,
+          n_jobs: int,
+          low_pass_sigma: float,
+          mask_inner_radius: float,
+          mask_outer_radius: float,
+          save_preprocessed_post_alignment_images: bool):
     """
     Align multiple eclipse images to reference image.
     """
@@ -98,7 +125,8 @@ def align(reference_image, images_to_align, output_dir, n_jobs, low_pass_sigma, 
     results = list(tqdm(total=len(images_to_align),
                         iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
                             joblib.delayed(align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs,
-                                                               mask_inner_radius, mask_outer_radius)
+                                                               mask_inner_radius, mask_outer_radius,
+                                                               save_preprocessed_post_alignment_images)
                             for image_path in images_to_align
                         )))
 
