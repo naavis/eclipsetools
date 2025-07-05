@@ -228,6 +228,7 @@ def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     total_weights = np.zeros_like(ref_image)
     weighted_sum = np.zeros_like(ref_image)
 
+    # TODO: Handle weights properly for the moon area, like Druckmüller describes
     for image_path in images_to_stack:
         click.echo(f"Image: {image_path}")
         image = open_image(image_path)
