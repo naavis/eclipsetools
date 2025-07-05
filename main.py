@@ -147,11 +147,6 @@ def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: s
                     mask_outer_radius: float):
     """
     Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
-    :param images_to_preprocess: Image paths to preprocess
-    :param n_jobs: Number of parallel jobs to use for preprocessing. Default is -1 (use all available CPUs).
-    :param output_dir: Directory to save preprocessed images.
-    :param mask_inner_radius: Inner radius of the annulus mask in multiples of the moon radius.
-    :param mask_outer_radius: Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.
     """
 
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
