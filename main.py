@@ -171,6 +171,10 @@ def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: s
 @click.option('--output-file', type=click.Path(), default='stacked_image.tiff',
               help='Output filename for the stacked image tiff file.')
 def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
+    """
+    Stack multiple eclipse images together. Images must be pre-aligned. Images taken with different exposure times
+    are combined by linear fitting to the reference image.
+    """
     ref_image = open_image(reference_image)
     ref_image -= min(ref_image.min(), 0.0)  # Ensure the reference image is non-negative
 
