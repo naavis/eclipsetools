@@ -11,6 +11,7 @@ from tqdm import tqdm
 from eclipsetools.alignment import find_transform
 from eclipsetools.preprocessing import preprocess_for_alignment
 from eclipsetools.stacking import linear_fit, weight_function_sigmoid
+from eclipsetools.utils.circle_finder import find_circle
 from eclipsetools.utils.image_reader import open_image
 
 
@@ -155,6 +156,15 @@ def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: s
               help='Output filename for the stacked image tiff file.')
 def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     ref_image = open_image(reference_image)
+    ref_image -= min(ref_image.min(), 0.0)  # Ensure the reference image is non-negative
+
+    # Mask out moving moon, because it confuses the linear fitting
+    moon_params = find_circle(ref_image[:, :, 1], min_radius=400, max_radius=600)
+    y, x = np.ogrid[:ref_image.shape[0], :ref_image.shape[1]]
+    distances = np.sqrt((x - moon_params.center[1]) ** 2 + (y - moon_params.center[0]) ** 2)
+    moon_mask = distances >= int(1.2 * moon_params.radius)
+
+    ref_points = ref_image[moon_mask, :].ravel()
 
     total_weights = np.zeros_like(ref_image)
     weighted_sum = np.zeros_like(ref_image)
@@ -164,16 +174,19 @@ def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
         image = open_image(image_path)
         assert image.shape == ref_image.shape, 'Stacked images must have the same shape'
 
-        ref_points = ref_image.ravel()
-        image_points = image.ravel()
+        image_points = image[moon_mask, :].ravel()
         linear_coef, linear_intercept = linear_fit(ref_points, image_points)
         click.echo(f"Linear fit: y = {linear_coef:.4f} * x + {linear_intercept:.4f}")
 
         weights = weight_function_sigmoid(image)
-        weighted_sum += (image - linear_intercept) * weights / linear_coef
+        weighted_sum += weights * (image - linear_intercept) / linear_coef
         total_weights += weights
 
-    stacked_image = np.clip(weighted_sum / total_weights, 0.0, 1.0)
+    stacked_image = weighted_sum / total_weights
+
+    # Ensure there are no negative values, and normalize values to maximum of 1.0
+    stacked_image -= min(stacked_image.min(), 0.0)
+    stacked_image /= max(stacked_image.max(), 1.0)
     click.echo(f"Saving stacked image to {output_file}")
     tifffile.imwrite(output_file, stacked_image, compression='zlib')
 
