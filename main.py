@@ -26,8 +26,8 @@ def align_single_image(reference_image: np.ndarray,
                        output_dir: str,
                        mask_inner_radius: float,
                        mask_outer_radius: float,
-                       save_preprocessed_post_alignment_images: bool = False) -> tuple[str, float, float, tuple[float,
-float]]:
+                       save_preprocessed_post_alignment_images: bool = False) -> \
+        tuple[str, float, float, tuple[float, float]]:
     """
     Process a single image alignment operation.
     :param output_dir: Directory to save the output images
@@ -87,18 +87,25 @@ float]]:
 @main.command()
 @click.argument('reference_image', type=click.Path(exists=True))
 @click.argument('images_to_align', nargs=-1, required=True)
-@click.option('--output-dir', default='output', type=click.Path(exists=False),
+@click.option('--output-dir',
+              default='output',
+              type=click.Path(exists=False),
               help='Directory to save preprocessed images.')
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
 @click.option('--low-pass-sigma',
               default=0.03,
               type=float,
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
-@click.option('--mask-inner-radius', default=1.2, type=float, help='Inner radius of the annulus mask in multiples of '
-                                                                   'the moon radius.')
-@click.option('--mask-outer-radius', default=2.0, type=float, help='Outer radius of the annulus mask in multiples of '
-                                                                   'the inner radius. Set to -1 to only mask the moon.')
-@click.option('--save-preprocessed-post-alignment-images', is_flag=True,
+@click.option('--mask-inner-radius',
+              default=1.2,
+              type=float,
+              help='Inner radius of the annulus mask in multiples of the moon radius.')
+@click.option('--mask-outer-radius',
+              default=2.0,
+              type=float,
+              help='Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.')
+@click.option('--save-preprocessed-post-alignment-images',
+              is_flag=True,
               help='If set, saves preprocessed images after alignment. Useful for troubleshooting alignment issues.')
 def align(reference_image: str,
           images_to_align: str,
@@ -171,7 +178,10 @@ def open_and_preprocess(image_path: str, output_dir: str, mask_inner_radius: flo
                                                                    'the moon radius.')
 @click.option('--mask-outer-radius', default=2.0, type=float, help='Outer radius of the annulus mask in multiples of '
                                                                    'the inner radius. Set to -1 to only mask the moon.')
-def preprocess_only(images_to_preprocess: tuple[str], n_jobs: int, output_dir: str, mask_inner_radius: float,
+def preprocess_only(images_to_preprocess: tuple[str],
+                    n_jobs: int,
+                    output_dir: str,
+                    mask_inner_radius: float,
                     mask_outer_radius: float):
     """
     Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
