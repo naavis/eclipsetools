@@ -246,7 +246,7 @@ def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     stacked_image -= min(stacked_image.min(), 0.0)
     stacked_image /= max(stacked_image.max(), 1.0)
     click.echo(f"Saving stacked image to {output_file}")
-    tifffile.imwrite(output_file, stacked_image, compression='zlib')
+    save_tiff(stacked_image, output_file)
 
 
 if __name__ == '__main__':
