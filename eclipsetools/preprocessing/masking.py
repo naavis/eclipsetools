@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 import cv2
 import numpy as np
 
@@ -67,3 +69,9 @@ def estimate_saturated_radius(moon_params: DetectedCircle,
         distances = np.linalg.norm(np.argwhere(saturated_pixels) - moon_params.center, axis=1)
         saturated_radius = np.max(distances)
     return saturated_radius
+
+
+class MaskMode(StrEnum):
+    AUTO_PER_IMAGE = 'auto'
+    MAXIMUM = 'max'
+    FIXED_PIXELS = 'fixed'

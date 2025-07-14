@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
 from eclipsetools.preprocessing import preprocess_for_alignment
+from eclipsetools.preprocessing.masking import MaskMode
 from eclipsetools.stacking import linear_fit, weight_function_sigmoid
 from eclipsetools.utils.circle_finder import find_circle
 from eclipsetools.utils.image_reader import open_image
@@ -97,6 +98,11 @@ def align_single_image(reference_image: np.ndarray,
               default=0.03,
               type=float,
               help='Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.')
+@click.option('--mask-mode',
+              type=click.Choice(MaskMode),
+              default=MaskMode.AUTO_PER_IMAGE,
+              help='Masking mode to use. "auto" determines the moon mask size automatically for each image. "max" '
+                   'uses the maximum moon mask size across all images.')
 @click.option('--mask-inner-radius',
               default=1.2,
               type=float,
@@ -113,6 +119,7 @@ def align(reference_image: str,
           output_dir: str,
           n_jobs: int,
           low_pass_sigma: float,
+          mask_mode: MaskMode,
           mask_inner_radius: float,
           mask_outer_radius: float,
           save_preprocessed_post_alignment_images: bool):
@@ -128,6 +135,10 @@ def align(reference_image: str,
 
     # Ensure the output directory exists
     os.makedirs(output_dir_abs, exist_ok=True)
+
+    if mask_mode == 'max':
+        # TODO: Implement logic to determine the maximum moon mask size across all images
+        pass
 
     # Process all images in parallel using joblib
     results = list(tqdm(total=len(images_to_align),
@@ -175,6 +186,11 @@ def open_and_preprocess(image_path: str, output_dir: str, mask_inner_radius: flo
 @click.option('--n-jobs', default=-1, type=int, help='Number of parallel jobs. Default is -1 (all CPUs).')
 @click.option('--output-dir', default='output', type=click.Path(exists=False),
               help='Directory to save preprocessed images.')
+@click.option('--mask-mode',
+              type=click.Choice(MaskMode),
+              default=MaskMode.AUTO_PER_IMAGE,
+              help='Masking mode to use. "auto" determines the moon mask size automatically for each image. "max" '
+                   'uses the maximum moon mask size across all images.')
 @click.option('--mask-inner-radius', default=1.2, type=float, help='Inner radius of the annulus mask in multiples of '
                                                                    'the moon radius.')
 @click.option('--mask-outer-radius', default=2.0, type=float, help='Outer radius of the annulus mask in multiples of '
@@ -182,6 +198,7 @@ def open_and_preprocess(image_path: str, output_dir: str, mask_inner_radius: flo
 def preprocess_only(images_to_preprocess: tuple[str],
                     n_jobs: int,
                     output_dir: str,
+                    mask_mode: MaskMode,
                     mask_inner_radius: float,
                     mask_outer_radius: float):
     """
@@ -195,6 +212,10 @@ def preprocess_only(images_to_preprocess: tuple[str],
 
     # Ensure the output directory exists
     os.makedirs(output_dir_abs, exist_ok=True)
+
+    if mask_mode == 'max':
+        # TODO: Implement logic to determine the maximum moon mask size across all images
+        pass
 
     list(
         tqdm(total=len(images_to_preprocess),
