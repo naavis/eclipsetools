@@ -3,7 +3,12 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 
-def rotational_blur(
+def radial_high_pass_filter(image: np.ndarray, moon_center: tuple) -> np.ndarray:
+    blurred_image = _rotational_blur(image, sigma=2.0, center=moon_center)
+    return image - blurred_image
+
+
+def _rotational_blur(
         image: np.ndarray,
         sigma: float,
         center: tuple) -> np.ndarray:

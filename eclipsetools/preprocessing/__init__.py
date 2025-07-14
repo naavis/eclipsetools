@@ -3,7 +3,8 @@ import numpy as np
 import eclipsetools.utils.circle_finder
 from eclipsetools.preprocessing import filtering
 from eclipsetools.preprocessing import masking
-from eclipsetools.preprocessing.masking import circle_mask, find_mask_radii_px
+from eclipsetools.preprocessing.filtering import radial_high_pass_filter
+from eclipsetools.preprocessing.masking import find_mask_radii_px, annulus_mask
 
 
 def preprocess_for_alignment(rgb_image: np.ndarray,
@@ -17,23 +18,6 @@ def preprocess_for_alignment(rgb_image: np.ndarray,
                                                                     mask_inner_radius_multiplier,
                                                                     mask_outer_radius_multiplier)
 
-    preproc = _mask_and_filter(image, moon.center, mask_inner_radius_px, mask_outer_radius_px)
-    return preproc
-
-
-def _mask_and_filter(image: np.ndarray,
-                     moon_center: tuple,
-                     mask_inner_radius_px: float,
-                     mask_outer_radius_px: float | None) -> np.ndarray:
-    # TODO: Parametrize sigma, which is used to control the amount of rotational blur used in the tangential high-pass filter
-    blurred_image = filtering.rotational_blur(image,
-                                              sigma=2.0,
-                                              center=moon_center)
-    filtered_image = image - blurred_image
-
-    if mask_outer_radius_px is None:
-        mask = circle_mask(image.shape, moon_center, mask_inner_radius_px)
-    else:
-        mask = masking.annulus_mask(image.shape, moon_center, mask_inner_radius_px, mask_outer_radius_px)
-    image_for_alignment = mask * filtered_image
-    return image_for_alignment
+    filtered_image = radial_high_pass_filter(image, moon.center)
+    masked_image = filtered_image * annulus_mask(image.shape, moon.center, mask_inner_radius_px, mask_outer_radius_px)
+    return masked_image

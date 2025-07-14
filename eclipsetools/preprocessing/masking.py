@@ -12,15 +12,26 @@ class MaskMode(StrEnum):
     FIXED_PIXELS = 'fixed'
 
 
+def annulus_mask(shape: tuple,
+                 moon_center: tuple,
+                 mask_inner_radius_px: float,
+                 mask_outer_radius_px: float | None) -> np.ndarray:
+    if mask_outer_radius_px is None:
+        mask = _circle_mask_internal(shape, moon_center, mask_inner_radius_px)
+    else:
+        mask = _annulus_mask_internal(shape, moon_center, mask_inner_radius_px, mask_outer_radius_px)
+    return mask
+
+
 def hann_window_mask(shape: tuple) -> np.ndarray:
     assert len(shape) == 2, "Shape must be a 2D tuple (height, width)."
     return cv2.createHanningWindow(shape[::-1], cv2.CV_32F)
 
 
-def annulus_mask(shape: np.ndarray,
-                 mask_center: tuple,
-                 inner_radius: float,
-                 outer_radius: float) -> np.ndarray:
+def _annulus_mask_internal(shape: tuple,
+                           mask_center: tuple,
+                           inner_radius: float,
+                           outer_radius: float) -> np.ndarray:
     mask = np.zeros(shape, dtype=np.float32)
 
     cv2.circle(
@@ -45,9 +56,9 @@ def annulus_mask(shape: np.ndarray,
     return mask
 
 
-def circle_mask(shape: np.ndarray,
-                mask_center: tuple,
-                radius: float) -> np.ndarray:
+def _circle_mask_internal(shape: tuple,
+                          mask_center: tuple,
+                          radius: float) -> np.ndarray:
     mask = np.ones(shape, dtype=np.float32)
 
     cv2.circle(
