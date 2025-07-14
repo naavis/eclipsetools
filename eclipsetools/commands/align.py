@@ -103,7 +103,7 @@ def _align_single_image(reference_image: np.ndarray,
     :param mask_inner_radius: Inner radius of the annulus mask in multiples of the moon radius.
     :param mask_outer_radius: Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.
     :param save_preprocessed_post_alignment_images: If true, save preprocessed images after alignment.
-    :return: Tuple of image path and translation vector (dy, dx)
+    :return: Tuple of image path, scale, rotation in degrees, and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
     image_to_align = preprocess_for_alignment(raw_image, mask_inner_radius, mask_outer_radius)
