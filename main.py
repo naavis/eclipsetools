@@ -15,7 +15,7 @@ from eclipsetools.utils.circle_finder import find_circle
 from eclipsetools.utils.image_reader import open_image
 
 
-@click.group()
+@click.group(context_settings={'show_default': True})
 def main():
     pass
 
