@@ -52,6 +52,8 @@ def preprocess_only(images_to_preprocess: list[str],
 
     list(
         tqdm(total=len(images_to_preprocess),
+             desc='Preprocessing images',
+             unit='img',
              iterable=Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
                  joblib.delayed(_open_and_preprocess)(path,
                                                       output_dir_abs,
@@ -73,7 +75,8 @@ def _find_max_mask_inner_radius(images: list[str], inner_multiplier: float, n_jo
     jobs = [joblib.delayed(find_mask_inner_radius_px)(image_path, inner_multiplier) for image_path in
             images]
     parallel = Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')
-    inner_radii = list(tqdm(total=len(images), iterable=parallel(jobs)))
+    inner_radii = list(tqdm(total=len(images), iterable=parallel(jobs), desc='Finding suitable moon mask size',
+                            unit='img'))
     return np.max(inner_radii)
 
 

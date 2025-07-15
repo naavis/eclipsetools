@@ -74,6 +74,8 @@ def align(reference_image: str,
 
     # Process all images in parallel using joblib
     results = list(tqdm(total=len(images_to_align),
+                        desc='Aligning images',
+                        unit='img',
                         iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
                             joblib.delayed(_align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs,
                                                                 mask_inner_radius, mask_outer_radius,
@@ -173,5 +175,8 @@ def _find_max_mask_inner_radius(images: list[str], inner_multiplier: float, n_jo
     jobs = [joblib.delayed(find_mask_inner_radius_px)(image_path, inner_multiplier) for image_path in
             images]
     parallel = joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')
-    inner_radii = tqdm(total=len(images), iterable=parallel(jobs))
+    inner_radii = tqdm(total=len(images),
+                       iterable=parallel(jobs),
+                       desc='Finding suitable moon mask size',
+                       unit='img')
     return max(inner_radii)
