@@ -7,9 +7,9 @@ from eclipsetools.preprocessing.filtering import radial_high_pass_filter
 from eclipsetools.preprocessing.masking import find_mask_radii_px, annulus_mask
 
 
-def preprocess_for_alignment(rgb_image: np.ndarray,
-                             mask_inner_radius_multiplier: float,
-                             mask_outer_radius_multiplier: float) -> np.ndarray:
+def preprocess_with_auto_mask(rgb_image: np.ndarray,
+                              mask_inner_radius_multiplier: float,
+                              mask_outer_radius_multiplier: float) -> np.ndarray:
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
     moon = eclipsetools.utils.circle_finder.find_circle(image, min_radius=400, max_radius=600)
     assert moon is not None, "Moon not found in the image. Please check the input image."

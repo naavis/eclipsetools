@@ -6,7 +6,7 @@ import numpy as np
 from joblib import Parallel
 from tqdm import tqdm
 
-from eclipsetools.preprocessing import preprocess_for_alignment
+from eclipsetools.preprocessing import preprocess_with_auto_mask
 from eclipsetools.preprocessing.masking import MaskMode
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
@@ -58,7 +58,7 @@ def preprocess_only(images_to_preprocess: tuple[str],
 
 def _open_and_preprocess(image_path: str, output_dir: str, mask_inner_radius: float, mask_outer_radius: float):
     rgb_image = open_image(image_path)
-    image_preproc = preprocess_for_alignment(rgb_image, mask_inner_radius, mask_outer_radius)
+    image_preproc = preprocess_with_auto_mask(rgb_image, mask_inner_radius, mask_outer_radius)
 
     # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
     image_preproc = np.clip((image_preproc - image_preproc.mean()) / image_preproc.std() + 0.5, 0.0, 1.0)

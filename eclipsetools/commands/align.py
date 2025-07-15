@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
-from eclipsetools.preprocessing import preprocess_for_alignment
+from eclipsetools.preprocessing import preprocess_with_auto_mask
 from eclipsetools.preprocessing.masking import MaskMode
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
@@ -53,7 +53,7 @@ def align(reference_image: str,
     """
     Align multiple eclipse images to reference image.
     """
-    ref_image = preprocess_for_alignment(open_image(reference_image), mask_inner_radius, mask_outer_radius)
+    ref_image = preprocess_with_auto_mask(open_image(reference_image), mask_inner_radius, mask_outer_radius)
 
     click.echo(f"Processing {len(images_to_align)} images...")
 
@@ -106,7 +106,7 @@ def _align_single_image(reference_image: np.ndarray,
     :return: Tuple of image path, scale, rotation in degrees, and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
-    image_to_align = preprocess_for_alignment(raw_image, mask_inner_radius, mask_outer_radius)
+    image_to_align = preprocess_with_auto_mask(raw_image, mask_inner_radius, mask_outer_radius)
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image,
         image_to_align,
