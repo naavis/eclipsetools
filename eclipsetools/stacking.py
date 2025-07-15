@@ -3,7 +3,8 @@ from sklearn.linear_model import RANSACRegressor
 
 
 def linear_fit(x, y):
-    lower_limit = 0.02
+    # TODO: Parametrize upper and lower limits
+    lower_limit = 0.005
     upper_limit = 0.9
     valid_points = (
         (x > lower_limit) & (x < upper_limit) & (y > lower_limit) & (y < upper_limit)
