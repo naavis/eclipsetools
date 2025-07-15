@@ -1,5 +1,6 @@
 import click
 import numpy as np
+from tqdm import tqdm
 
 from eclipsetools.stacking import linear_fit, weight_function_sigmoid
 from eclipsetools.utils.circle_finder import find_circle
@@ -74,11 +75,12 @@ def average_stack(images_to_stack: list[str], output_file: str):
     """
     num_images = len(images_to_stack)
     stacked_image = None
-    for image_path in images_to_stack:
+    for image_path in tqdm(iterable=images_to_stack, desc="Stacking images"):
         image = open_image(image_path)
         if stacked_image is None:
             stacked_image = image
         else:
             stacked_image += image
     stacked_image /= num_images
+    click.echo(f"Saving stacked image to {output_file}")
     save_tiff(stacked_image, output_file)
