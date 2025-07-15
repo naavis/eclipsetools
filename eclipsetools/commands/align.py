@@ -7,11 +7,11 @@ import numpy as np
 from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
+from eclipsetools.preprocessing.masking import MaskMode, find_mask_inner_radius_px
 from eclipsetools.preprocessing.workflows import (
     preprocess_with_auto_mask,
     preprocess_with_fixed_mask,
 )
-from eclipsetools.preprocessing.masking import MaskMode, find_mask_inner_radius_px
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
 
@@ -184,7 +184,7 @@ def _align_single_image(
     rotation_scale_matrix = np.vstack(
         [
             cv2.getRotationMatrix2D(
-                (image_to_align.shape[1] / 2, image_to_align.shape[0] / 2),
+                (raw_image.shape[1] / 2, raw_image.shape[0] / 2),
                 -rotation_degrees,
                 1.0 / scale,
             ),
@@ -200,7 +200,7 @@ def _align_single_image(
     aligned_image = cv2.warpAffine(
         raw_image,
         transform_matrix,
-        (image_to_align.shape[1], image_to_align.shape[0]),
+        (raw_image.shape[1], raw_image.shape[0]),
         flags=cv2.INTER_LANCZOS4,
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(0, 0, 0),
