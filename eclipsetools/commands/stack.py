@@ -73,14 +73,18 @@ def average_stack(images_to_stack: list[str], output_file: str):
     """
     Stack multiple images by averaging them together. This is useful for images taken with the same exposure time.
     """
-    num_images = len(images_to_stack)
     stacked_image = None
+    counts = None
     for image_path in tqdm(iterable=images_to_stack, desc="Stacking images"):
         image = open_image(image_path)
+        has_values = image > 0.0
         if stacked_image is None:
             stacked_image = image
+            counts = np.ones_like(image, dtype=np.uint32)
         else:
             stacked_image += image
-    stacked_image /= num_images
+            counts += has_values.astype(np.uint32)
+
+    stacked_image /= counts
     click.echo(f"Saving stacked image to {output_file}")
     save_tiff(stacked_image, output_file)
