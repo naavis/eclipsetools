@@ -17,7 +17,7 @@ def annulus_mask(shape: tuple,
                  moon_center: tuple,
                  mask_inner_radius_px: float,
                  mask_outer_radius_px: float | None) -> np.ndarray:
-    if mask_outer_radius_px is None:
+    if mask_outer_radius_px is None or mask_outer_radius_px < 0.0:
         mask = _circle_mask_internal(shape, moon_center, mask_inner_radius_px)
     else:
         mask = _annulus_mask_internal(shape, moon_center, mask_inner_radius_px, mask_outer_radius_px)
