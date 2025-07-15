@@ -7,9 +7,6 @@ from eclipsetools.preprocessing.filtering import radial_high_pass_filter
 from eclipsetools.preprocessing.masking import find_mask_radii_px, annulus_mask
 
 
-# TODO: Fix mask location when cropping
-
-
 def preprocess_with_auto_mask(
     rgb_image: np.ndarray,
     mask_inner_radius_multiplier: float,
