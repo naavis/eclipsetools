@@ -24,10 +24,14 @@ def preprocess_with_auto_mask(
         rgb_image, moon, mask_inner_radius_multiplier, mask_outer_radius_multiplier
     )
 
-    filtered_image = radial_high_pass_filter(image, moon.center)[crop:-crop, crop:-crop]
+    crop_start = crop
+    crop_end = -crop if crop > 0 else None
+    filtered_image = radial_high_pass_filter(image, moon.center)[
+        crop_start:crop_end, crop_start:crop_end
+    ]
     masked_image = filtered_image * annulus_mask(
         filtered_image.shape,
-        moon.center,
+        (moon.center[0] - crop, moon.center[1] - crop),
         mask_inner_radius_px,
         mask_outer_radius_px - crop,
     )
@@ -49,12 +53,14 @@ def preprocess_with_fixed_mask(
     ), "Moon not found in the image. Please check the input image."
 
     mask_outer_radius_px = mask_inner_radius_px * mask_outer_radius_multiplier
+    crop_start = crop
+    crop_end = -crop if crop > 0 else None
     filtered_image = filtering.radial_high_pass_filter(image, moon.center)[
-        crop:-crop, crop:-crop
+        crop_start:crop_end, crop_start:crop_end
     ]
     masked_image = filtered_image * masking.annulus_mask(
         filtered_image.shape,
-        moon.center,
+        (moon.center[0] - crop, moon.center[1] - crop),
         mask_inner_radius_px,
         mask_outer_radius_px - crop,
     )
