@@ -3,7 +3,8 @@ from enum import StrEnum
 import cv2
 import numpy as np
 
-from eclipsetools.utils.circle_finder import DetectedCircle
+from eclipsetools.utils.circle_finder import DetectedCircle, find_circle
+from eclipsetools.utils.image_reader import open_image
 
 
 class MaskMode(StrEnum):
@@ -95,6 +96,17 @@ def find_mask_radii_px(image: np.ndarray,
                                shortest_distance_to_edge * 0.95) if mask_outer_radius_multiplier > 0.0 else None
 
     return mask_inner_radius_px, mask_outer_radius_px
+
+
+def find_mask_inner_radius_px(
+        image_path: str,
+        inner_multiplier: float) -> float:
+    rgb_image = open_image(image_path)
+    image = np.mean(rgb_image, axis=2, dtype=np.float32)
+    moon = find_circle(image, min_radius=400, max_radius=600)
+    saturated_radius = _estimate_saturated_radius(moon, rgb_image)
+    inner_radius_px = inner_multiplier * (saturated_radius if saturated_radius else moon.radius)
+    return inner_radius_px
 
 
 def _estimate_saturated_radius(moon_params: DetectedCircle,

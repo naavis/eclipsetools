@@ -7,8 +7,8 @@ import numpy as np
 from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
-from eclipsetools.preprocessing import preprocess_with_auto_mask
-from eclipsetools.preprocessing.masking import MaskMode
+from eclipsetools.preprocessing import preprocess_with_auto_mask, preprocess_with_fixed_mask
+from eclipsetools.preprocessing.masking import MaskMode, find_mask_inner_radius_px
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
 
@@ -42,7 +42,7 @@ from eclipsetools.utils.image_writer import save_tiff
               is_flag=True,
               help='If set, saves preprocessed images after alignment. Useful for troubleshooting alignment issues.')
 def align(reference_image: str,
-          images_to_align: str,
+          images_to_align: list[str],
           output_dir: str,
           n_jobs: int,
           low_pass_sigma: float,
@@ -53,7 +53,14 @@ def align(reference_image: str,
     """
     Align multiple eclipse images to reference image.
     """
-    ref_image = preprocess_with_auto_mask(open_image(reference_image), mask_inner_radius, mask_outer_radius)
+
+    max_mask_inner_radius_px = None
+    if mask_mode == 'max':
+        images_for_masking = [reference_image] + list(images_to_align)
+        max_mask_inner_radius_px = _find_max_mask_inner_radius(images_for_masking, mask_inner_radius, n_jobs)
+        ref_image = preprocess_with_fixed_mask(open_image(reference_image), max_mask_inner_radius_px, mask_outer_radius)
+    else:
+        ref_image = preprocess_with_auto_mask(open_image(reference_image), mask_inner_radius, mask_outer_radius)
 
     click.echo(f"Processing {len(images_to_align)} images...")
 
@@ -63,15 +70,12 @@ def align(reference_image: str,
     # Ensure the output directory exists
     os.makedirs(output_dir_abs, exist_ok=True)
 
-    if mask_mode == 'max':
-        # TODO: Implement logic to determine the maximum moon mask size across all images
-        pass
-
     # Process all images in parallel using joblib
     results = list(tqdm(total=len(images_to_align),
                         iterable=joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')(
                             joblib.delayed(_align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs,
                                                                 mask_inner_radius, mask_outer_radius,
+                                                                max_mask_inner_radius_px,
                                                                 save_preprocessed_post_alignment_images)
                             for image_path in images_to_align
                         )))
@@ -92,6 +96,7 @@ def _align_single_image(reference_image: np.ndarray,
                         output_dir: str,
                         mask_inner_radius: float,
                         mask_outer_radius: float,
+                        mask_inner_radius_px: float | None = None,
                         save_preprocessed_post_alignment_images: bool = False) -> \
         tuple[str, float, float, tuple[float, float]]:
     """
@@ -102,11 +107,15 @@ def _align_single_image(reference_image: np.ndarray,
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
     :param mask_inner_radius: Inner radius of the annulus mask in multiples of the moon radius.
     :param mask_outer_radius: Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.
+    :param mask_inner_radius_px: Inner radius of the annulus mask in pixels. If None, use the auto mask.
     :param save_preprocessed_post_alignment_images: If true, save preprocessed images after alignment.
     :return: Tuple of image path, scale, rotation in degrees, and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
-    image_to_align = preprocess_with_auto_mask(raw_image, mask_inner_radius, mask_outer_radius)
+    if mask_inner_radius_px is None:
+        image_to_align = preprocess_with_auto_mask(raw_image, mask_inner_radius, mask_outer_radius)
+    else:
+        image_to_align = preprocess_with_fixed_mask(raw_image, mask_inner_radius_px, mask_outer_radius)
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image,
         image_to_align,
@@ -149,3 +158,18 @@ def _align_single_image(reference_image: np.ndarray,
         save_tiff(aligned_preproc, preproc_aligned_filename)
 
     return image_path, float(scale), float(rotation_degrees), (float(translation_y), float(translation_x))
+
+
+def _find_max_mask_inner_radius(images: list[str], inner_multiplier: float, n_jobs: int) -> float:
+    """
+    Find the maximum inner radius in pixels for the moon mask across all images.
+    :param images: Paths to images
+    :param inner_multiplier: Number to multiply the found moon radius by to get the mask radius in pixels.
+    :param n_jobs: Number of parallel jobs to use for processing.
+    :return: Biggest mask radius that covers the moon and saturated areas in all images.
+    """
+    jobs = [joblib.delayed(find_mask_inner_radius_px)(image_path, inner_multiplier) for image_path in
+            images]
+    parallel = joblib.Parallel(n_jobs=n_jobs, prefer='threads', return_as='generator_unordered')
+    inner_radii = tqdm(total=len(images), iterable=parallel(jobs))
+    return max(inner_radii)
