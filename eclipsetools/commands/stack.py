@@ -13,12 +13,12 @@ from eclipsetools.utils.image_writer import save_tiff
 @click.option(
     "--output-file",
     type=click.Path(),
-    default="stacked_image.tiff",
+    default="hdr_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
 def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     """
-    Stack multiple eclipse images together. Images must be pre-aligned. Images taken with different exposure times
+    Stack multiple images to HDR stack. Images must be pre-aligned. Images taken with different exposure times
     are combined by linear fitting to the reference image.
     """
     ref_image = open_image(reference_image)
@@ -57,4 +57,28 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     stacked_image -= min(stacked_image.min(), 0.0)
     stacked_image /= max(stacked_image.max(), 1.0)
     click.echo(f"Saving stacked image to {output_file}")
+    save_tiff(stacked_image, output_file)
+
+
+@click.command()
+@click.argument("images_to_stack", nargs=-1, required=True)
+@click.option(
+    "--output-file",
+    type=click.Path(),
+    default="average_stacked_image.tiff",
+    help="Output filename for the stacked image tiff file.",
+)
+def average_stack(images_to_stack: list[str], output_file: str):
+    """
+    Stack multiple images by averaging them together. This is useful for images taken with the same exposure time.
+    """
+    num_images = len(images_to_stack)
+    stacked_image = None
+    for image_path in images_to_stack:
+        image = open_image(image_path)
+        if stacked_image is None:
+            stacked_image = image
+        else:
+            stacked_image += image
+    stacked_image /= num_images
     save_tiff(stacked_image, output_file)
