@@ -8,10 +8,14 @@ from eclipsetools.utils.image_writer import save_tiff
 
 
 @click.command()
-@click.argument('reference_image', type=click.Path(exists=True))
-@click.argument('images_to_stack', nargs=-1, required=True)
-@click.option('--output-file', type=click.Path(), default='stacked_image.tiff',
-              help='Output filename for the stacked image tiff file.')
+@click.argument("reference_image", type=click.Path(exists=True))
+@click.argument("images_to_stack", nargs=-1, required=True)
+@click.option(
+    "--output-file",
+    type=click.Path(),
+    default="stacked_image.tiff",
+    help="Output filename for the stacked image tiff file.",
+)
 def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     """
     Stack multiple eclipse images together. Images must be pre-aligned. Images taken with different exposure times
@@ -22,8 +26,10 @@ def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
 
     # Mask out moving moon, because it confuses the linear fitting
     moon_params = find_circle(ref_image[:, :, 1], min_radius=400, max_radius=600)
-    y, x = np.ogrid[:ref_image.shape[0], :ref_image.shape[1]]
-    distances = np.sqrt((x - moon_params.center[1]) ** 2 + (y - moon_params.center[0]) ** 2)
+    y, x = np.ogrid[: ref_image.shape[0], : ref_image.shape[1]]
+    distances = np.sqrt(
+        (x - moon_params.center[1]) ** 2 + (y - moon_params.center[0]) ** 2
+    )
     moon_mask = distances >= int(1.2 * moon_params.radius)
 
     ref_points = ref_image[moon_mask, :].ravel()
@@ -35,7 +41,7 @@ def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     for image_path in images_to_stack:
         click.echo(f"Image: {image_path}")
         image = open_image(image_path)
-        assert image.shape == ref_image.shape, 'Stacked images must have the same shape'
+        assert image.shape == ref_image.shape, "Stacked images must have the same shape"
 
         image_points = image[moon_mask, :].ravel()
         linear_coef, linear_intercept = linear_fit(ref_points, image_points)

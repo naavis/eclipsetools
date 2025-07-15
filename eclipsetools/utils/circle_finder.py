@@ -11,9 +11,8 @@ class DetectedCircle:
 
 
 def find_circle(
-        image: np.ndarray,
-        min_radius: int,
-        max_radius: int) -> DetectedCircle | None:
+    image: np.ndarray, min_radius: int, max_radius: int
+) -> DetectedCircle | None:
     assert image.ndim == 2, "Input image must be grayscale (2D array)."
 
     detected_circles = cv2.HoughCircles(
@@ -24,7 +23,8 @@ def find_circle(
         param1=50,  # Upper threshold for Canny edge detector
         param2=30,  # Accumulator threshold for finding images (smaller -> more circles detected)
         minRadius=min_radius,
-        maxRadius=max_radius)
+        maxRadius=max_radius,
+    )
 
     if detected_circles is not None:
         # _plot_circles(detected_circles, image)
@@ -35,15 +35,16 @@ def find_circle(
 
 
 def _plot_circles(detected_circles, image):
-    print(f'Found {detected_circles.shape[1]} circles')
+    print(f"Found {detected_circles.shape[1]} circles")
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle
+
     for pt in detected_circles[0, :]:
         a, b, r = pt[0], pt[1], pt[2]
-        print(f'Circle at ({a}, {b}) with radius {r}')
+        print(f"Circle at ({a}, {b}) with radius {r}")
 
         fig, ax = plt.subplots(1)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.imshow(image)
-        ax.add_patch(Circle((a, b), r, fill=False, edgecolor='red'))
+        ax.add_patch(Circle((a, b), r, fill=False, edgecolor="red"))
         plt.show()

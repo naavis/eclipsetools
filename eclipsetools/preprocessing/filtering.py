@@ -8,10 +8,7 @@ def radial_high_pass_filter(image: np.ndarray, moon_center: tuple) -> np.ndarray
     return image - blurred_image
 
 
-def _rotational_blur(
-        image: np.ndarray,
-        sigma: float,
-        center: tuple) -> np.ndarray:
+def _rotational_blur(image: np.ndarray, sigma: float, center: tuple) -> np.ndarray:
     """
     Apply a rotational Gaussian blur to a grayscale image using polar coordinates.
     :param image: Input grayscale image (2D array).
@@ -28,13 +25,17 @@ def _rotational_blur(
         src=image,
         center=(center[1], center[0]),
         maxRadius=max_radius,
-        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LINEAR)
+        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LINEAR,
+    )
 
     sigma_pixels = sigma * polar_image.shape[0] / 360.0
-    blurred_polar = gaussian_filter(polar_image, sigma=sigma_pixels, mode='wrap', axes=(0,))
+    blurred_polar = gaussian_filter(
+        polar_image, sigma=sigma_pixels, mode="wrap", axes=(0,)
+    )
 
     return cv2.linearPolar(
         src=blurred_polar,
         center=(center[1], center[0]),
         maxRadius=max_radius,
-        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP)
+        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP,
+    )

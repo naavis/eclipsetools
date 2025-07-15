@@ -17,7 +17,9 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     return np.array(_phase_correlate_with_low_pass(ref_image, image, low_pass_sigma))
 
 
-def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float) -> np.ndarray:
+def _phase_correlate_with_low_pass(
+    img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float
+) -> np.ndarray:
     window = hann_window_mask(img_a.shape)
     img_a_win = window * img_a
     img_b_win = window * img_b
@@ -29,25 +31,32 @@ def _phase_correlate_with_low_pass(img_a: np.ndarray, img_b: np.ndarray, low_pas
     fft2 = np.fft.fft2(img_b_norm)
 
     offset = 0.01 * np.max(np.abs(fft1))
-    cross_power_spectrum = fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
+    cross_power_spectrum = (
+        fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
+    )
 
     gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
 
     phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
-    subpixel_peak = _center_of_mass(phase_correlation, (int(initial_peak[0]), int(initial_peak[1])), 4)
+    subpixel_peak = _center_of_mass(
+        phase_correlation, (int(initial_peak[0]), int(initial_peak[1])), 4
+    )
 
     # Upper half of each axis represents negative translations
     thresholds = np.array(phase_correlation.shape[:2]) // 2
     subtractions = np.array(phase_correlation.shape[:2])
-    subpixel_peak = np.where(subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak)
+    subpixel_peak = np.where(
+        subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak
+    )
 
     return -subpixel_peak
 
 
-def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -> (
-        tuple)[float, float, tuple[float, float]]:
+def find_transform(
+    ref_image, image, low_pass_sigma, allow_scale: bool = True
+) -> (tuple)[float, float, tuple[float, float]]:
     """
     Find the scale, rotation, and translation between two images.
 
@@ -73,8 +82,8 @@ def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -
 
     # Step 1: Find scale and rotation
     # We only need half of the log-polar FFTs, as they are symmetric
-    ref_fft_log_polar = _log_polar_fft(ref_image_pad, radius)[:shape[0] // 2, :]
-    image_fft_log_polar = _log_polar_fft(image_pad, radius)[:shape[0] // 2, :]
+    ref_fft_log_polar = _log_polar_fft(ref_image_pad, radius)[: shape[0] // 2, :]
+    image_fft_log_polar = _log_polar_fft(image_pad, radius)[: shape[0] // 2, :]
 
     # Find shifts in the log-polar FFTs using phase correlation
     shift_y, shift_x = _simple_phase_correlation(ref_fft_log_polar, image_fft_log_polar)
@@ -88,7 +97,10 @@ def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -
 
     # Step 2: Apply scale and rotation to the image
     rotate_scale_matrix = cv2.getRotationMatrix2D(
-        (image_pad.shape[1] // 2, image_pad.shape[0] // 2), -rotation_degrees, 1.0 / scale)
+        (image_pad.shape[1] // 2, image_pad.shape[0] // 2),
+        -rotation_degrees,
+        1.0 / scale,
+    )
 
     translated_image = cv2.warpAffine(
         image_pad,
@@ -96,12 +108,19 @@ def find_transform(ref_image, image, low_pass_sigma, allow_scale: bool = True) -
         dsize=(image_pad.shape[1], image_pad.shape[0]),
         flags=cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=[0, 0, 0]).astype(np.float32)
+        borderValue=[0, 0, 0],
+    ).astype(np.float32)
 
     # Step 3: Find translation between reference and transformed image
-    translation_y, translation_x = find_translation(ref_image_pad, translated_image, low_pass_sigma)
+    translation_y, translation_x = find_translation(
+        ref_image_pad, translated_image, low_pass_sigma
+    )
 
-    return float(scale), float(rotation_degrees), (float(translation_y), float(translation_x))
+    return (
+        float(scale),
+        float(rotation_degrees),
+        (float(translation_y), float(translation_x)),
+    )
 
 
 def _pad_with_zeros(image: np.ndarray) -> np.ndarray:
@@ -111,7 +130,7 @@ def _pad_with_zeros(image: np.ndarray) -> np.ndarray:
     padded = np.zeros((longer_side, longer_side), dtype=image.dtype)
     y_offset = (longer_side - h) // 2
     x_offset = (longer_side - w) // 2
-    padded[y_offset:y_offset + h, x_offset:x_offset + w] = image
+    padded[y_offset : y_offset + h, x_offset : x_offset + w] = image
     return padded
 
 
@@ -129,10 +148,14 @@ def _simple_phase_correlation(img_a, img_b):
     fft2 = np.fft.fft2(img_b_norm)
 
     offset = 0.01 * np.max(np.abs(fft1))
-    cross_power_spectrum = (fft1 * np.conj(fft2)) / (np.abs(fft1 + offset) * np.abs(fft2 + offset))
+    cross_power_spectrum = (fft1 * np.conj(fft2)) / (
+        np.abs(fft1 + offset) * np.abs(fft2 + offset)
+    )
     phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
 
-    shift_y, shift_x = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
+    shift_y, shift_x = np.unravel_index(
+        np.argmax(phase_correlation), phase_correlation.shape
+    )
 
     # TODO: Add subpixel alignment
 
@@ -156,7 +179,8 @@ def _log_polar_fft(image: np.ndarray, radius: float) -> np.ndarray:
         dsize=(0, 0),
         center=(fft_mag.shape[1] // 2, fft_mag.shape[0] // 2),
         maxRadius=radius,
-        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LOG)
+        flags=cv2.INTER_LINEAR | cv2.WARP_POLAR_LOG,
+    )
     return log_polar
 
 
@@ -164,20 +188,21 @@ def _gaussian_weights(shape: tuple, sigma: float) -> np.ndarray:
     fy = np.fft.fftfreq(shape[1])
     fx = np.fft.fftfreq(shape[0])
     fy_grid, fx_grid = np.meshgrid(fy, fx)
-    freq_squared = fy_grid ** 2 + fx_grid ** 2
-    gaussian_weighting = np.exp(-0.5 * freq_squared / (sigma ** 2), dtype=np.float32)
+    freq_squared = fy_grid**2 + fx_grid**2
+    gaussian_weighting = np.exp(-0.5 * freq_squared / (sigma**2), dtype=np.float32)
     return gaussian_weighting
 
 
-def _center_of_mass(image: np.ndarray, center_point: tuple[int, int], window_size: int) -> \
-        tuple[float, float]:
+def _center_of_mass(
+    image: np.ndarray, center_point: tuple[int, int], window_size: int
+) -> tuple[float, float]:
     height, width = image.shape
     y0, x0 = center_point
     half_size = window_size // 2
 
     # Generate wrapped indices
-    y_indices = (np.arange(y0 - half_size, y0 + half_size + 1) % height)
-    x_indices = (np.arange(x0 - half_size, x0 + half_size + 1) % width)
+    y_indices = np.arange(y0 - half_size, y0 + half_size + 1) % height
+    x_indices = np.arange(x0 - half_size, x0 + half_size + 1) % width
 
     # Extract wrapped region
     region = image[np.ix_(y_indices, x_indices)]

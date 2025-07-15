@@ -9,4 +9,4 @@ def save_tiff(image: np.ndarray, output_path: str):
     :param output_path: Path where the image will be saved
     :return: None
     """
-    tifffile.imwrite(output_path, image, compression='zlib')
+    tifffile.imwrite(output_path, image, compression="zlib")
