@@ -16,7 +16,7 @@ from eclipsetools.utils.image_writer import save_tiff
     default="stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
-def stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
+def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
     """
     Stack multiple eclipse images together. Images must be pre-aligned. Images taken with different exposure times
     are combined by linear fitting to the reference image.
