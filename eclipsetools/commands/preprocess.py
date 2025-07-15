@@ -36,8 +36,6 @@ def preprocess_only(images_to_preprocess: list[str],
     Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
     """
 
-    # TODO: Implement fixed mask mode
-
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
 
     output_dir_abs = os.path.abspath(output_dir)

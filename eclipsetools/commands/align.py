@@ -54,8 +54,6 @@ def align(reference_image: str,
     Align multiple eclipse images to reference image.
     """
 
-    # TODO: Implement fixed mask mode
-
     max_mask_inner_radius_px = None
     if mask_mode == 'max':
         images_for_masking = [reference_image] + list(images_to_align)

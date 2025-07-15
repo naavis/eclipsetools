@@ -10,7 +10,6 @@ from eclipsetools.utils.image_reader import open_image
 class MaskMode(StrEnum):
     AUTO_PER_IMAGE = 'auto'
     MAXIMUM = 'max'
-    FIXED_PIXELS = 'fixed'
 
 
 def annulus_mask(shape: tuple,
