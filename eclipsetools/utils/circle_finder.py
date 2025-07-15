@@ -6,7 +6,7 @@ import numpy as np
 
 @dataclass
 class DetectedCircle:
-    center: tuple
+    center: tuple[float, float]
     radius: float
 
 
@@ -29,7 +29,9 @@ def find_circle(
     if detected_circles is not None:
         # _plot_circles(detected_circles, image)
         circle = detected_circles[0][0]
-        return DetectedCircle(center=(circle[1], circle[0]), radius=float(circle[2]))
+        return DetectedCircle(
+            center=(float(circle[1]), float(circle[0])), radius=float(circle[2])
+        )
     else:
         return None
 
