@@ -33,7 +33,8 @@ def preprocess_only(images_to_preprocess: list[str],
                     mask_inner_radius: float,
                     mask_outer_radius: float):
     """
-    Preprocess images for alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
+    Preprocess images for alignment. This is useful for testing and troubleshooting preprocessing settings without
+    doing actual alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
     """
 
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
