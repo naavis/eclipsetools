@@ -41,6 +41,11 @@ from eclipsetools.utils.image_writer import save_tiff
 @click.option('--save-preprocessed-post-alignment-images',
               is_flag=True,
               help='If set, saves preprocessed images after alignment. Useful for troubleshooting alignment issues.')
+@click.option('--crop',
+              default=0,
+              type=int,
+              help='Crop this many pixels from each side during preprocessing. This helps dealing with artifacts '
+                   'caused by stacking several images and using the stack as a reference image.')
 def align(reference_image: str,
           images_to_align: list[str],
           output_dir: str,
@@ -49,7 +54,8 @@ def align(reference_image: str,
           mask_mode: MaskMode,
           mask_inner_radius: float,
           mask_outer_radius: float,
-          save_preprocessed_post_alignment_images: bool):
+          save_preprocessed_post_alignment_images: bool,
+          crop: int):
     """
     Align multiple eclipse images to reference image.
     """
@@ -58,9 +64,10 @@ def align(reference_image: str,
     if mask_mode == 'max':
         images_for_masking = [reference_image] + list(images_to_align)
         max_mask_inner_radius_px = _find_max_mask_inner_radius(images_for_masking, mask_inner_radius, n_jobs)
-        ref_image = preprocess_with_fixed_mask(open_image(reference_image), max_mask_inner_radius_px, mask_outer_radius)
+        ref_image = preprocess_with_fixed_mask(open_image(reference_image), max_mask_inner_radius_px,
+                                               mask_outer_radius, crop)
     else:
-        ref_image = preprocess_with_auto_mask(open_image(reference_image), mask_inner_radius, mask_outer_radius)
+        ref_image = preprocess_with_auto_mask(open_image(reference_image), mask_inner_radius, mask_outer_radius, crop)
 
     click.echo(f"Processing {len(images_to_align)} images...")
 
@@ -78,7 +85,7 @@ def align(reference_image: str,
                             joblib.delayed(_align_single_image)(ref_image, image_path, low_pass_sigma, output_dir_abs,
                                                                 mask_inner_radius, mask_outer_radius,
                                                                 max_mask_inner_radius_px,
-                                                                save_preprocessed_post_alignment_images)
+                                                                save_preprocessed_post_alignment_images, crop)
                             for image_path in images_to_align
                         )))
 
@@ -99,7 +106,8 @@ def _align_single_image(reference_image: np.ndarray,
                         mask_inner_radius: float,
                         mask_outer_radius: float,
                         mask_inner_radius_px: float | None = None,
-                        save_preprocessed_post_alignment_images: bool = False) -> \
+                        save_preprocessed_post_alignment_images: bool = False,
+                        crop=0) -> \
         tuple[str, float, float, tuple[float, float]]:
     """
     Process a single image alignment operation.
@@ -111,13 +119,14 @@ def _align_single_image(reference_image: np.ndarray,
     :param mask_outer_radius: Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.
     :param mask_inner_radius_px: Inner radius of the annulus mask in pixels. If None, use the auto mask.
     :param save_preprocessed_post_alignment_images: If true, save preprocessed images after alignment.
+    :param crop: Number of pixels to crop from each side during preprocessing.
     :return: Tuple of image path, scale, rotation in degrees, and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
     if mask_inner_radius_px is None:
-        image_to_align = preprocess_with_auto_mask(raw_image, mask_inner_radius, mask_outer_radius)
+        image_to_align = preprocess_with_auto_mask(raw_image, mask_inner_radius, mask_outer_radius, crop)
     else:
-        image_to_align = preprocess_with_fixed_mask(raw_image, mask_inner_radius_px, mask_outer_radius)
+        image_to_align = preprocess_with_fixed_mask(raw_image, mask_inner_radius_px, mask_outer_radius, crop)
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image,
         image_to_align,
