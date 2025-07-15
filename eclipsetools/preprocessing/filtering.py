@@ -16,7 +16,7 @@ def _rotational_blur(
     Apply a rotational Gaussian blur to a grayscale image using polar coordinates.
     :param image: Input grayscale image (2D array).
     :param sigma: Blur sigma in degrees.
-    :param center: (x, y) coordinates of the rotation center.
+    :param center: (y, x) coordinates of the rotation center.
     :return: Blurred image as a 2D array.
     """
     assert image.ndim == 2, "Input image must be grayscale (2D array)."
