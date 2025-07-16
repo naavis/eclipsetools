@@ -2,15 +2,29 @@ import numpy as np
 from sklearn.linear_model import RANSACRegressor
 
 
-def linear_fit(x, y):
-    # TODO: Parametrize upper and lower limits
-    lower_limit = 0.005
+def linear_fit(x, y, max_points=10000):
+    # We care more about the top part of the signal than the noisy bottom part, which can skew the linear fit.
+    # We only use about max_points data points to find the percentile, because that is slow.
+    percentile_limiter = max(len(x) // max_points, 1)
+    lower_limit_x = np.percentile(x[::percentile_limiter], 80)
+    lower_limit_y = np.percentile(y[::percentile_limiter], 80)
     upper_limit = 0.9
+
     valid_points = (
-        (x > lower_limit) & (x < upper_limit) & (y > lower_limit) & (y < upper_limit)
+        (x > lower_limit_x)
+        & (x < upper_limit)
+        & (y > lower_limit_y)
+        & (y < upper_limit)
     )
+
     x_valid = x[valid_points]
     y_valid = y[valid_points]
+
+    # Only use about max_points data points for the linear fit to avoid performance issues
+    div = max(len(x_valid) // max_points, 1)
+    x_valid = x_valid[::div]
+    y_valid = y_valid[::div]
+
     model = RANSACRegressor()
     model.fit(x_valid.reshape(-1, 1), y_valid)
     linear_coef = model.estimator_.coef_[0]
