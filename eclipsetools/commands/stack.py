@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 from eclipsetools.stacking import linear_fit, weight_function_sigmoid
-from eclipsetools.utils.circle_finder import find_circle
+from eclipsetools.utils.circle_finder import find_circle, DetectedCircle
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
 
@@ -27,9 +27,7 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
 
     # Mask out moving moon, because it confuses the linear fitting
     ref_moon_params = find_circle(ref_image[:, :, 1], min_radius=400, max_radius=600)
-    linear_fit_moon_mask = _get_linear_fit_moon_mask(ref_image, ref_moon_params)
-
-    ref_linear_fit_points = ref_image[linear_fit_moon_mask, :].ravel()
+    ref_moon_mask = _get_moon_mask(ref_image.shape, ref_moon_params, 1.0)
 
     total_weights = np.zeros_like(ref_image)
     weighted_sum = np.zeros_like(ref_image)
@@ -40,7 +38,13 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
         image = open_image(image_path)
         assert image.shape == ref_image.shape, "Stacked images must have the same shape"
 
-        image_linear_fit_points = image[linear_fit_moon_mask, :].ravel()
+        image_moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
+        image_moon_mask = _get_moon_mask(image.shape, image_moon_params, 1.1)
+
+        # We linear fit only pixels that are not contaminated by the moon in either image.
+        pixels_without_moon = ref_moon_mask & image_moon_mask
+        ref_linear_fit_points = ref_image[pixels_without_moon, :].ravel()
+        image_linear_fit_points = image[pixels_without_moon, :].ravel()
 
         linear_coef, linear_intercept = linear_fit(
             ref_linear_fit_points, image_linear_fit_points
@@ -60,12 +64,14 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     save_tiff(stacked_image, output_file)
 
 
-def _get_linear_fit_moon_mask(ref_image, moon_params):
-    y, x = np.ogrid[: ref_image.shape[0], : ref_image.shape[1]]
+def _get_moon_mask(
+    shape: tuple, moon_params: DetectedCircle, mask_size: float
+) -> np.ndarray:
+    y, x = np.ogrid[: shape[0], : shape[1]]
     distances = np.sqrt(
         (x - moon_params.center[1]) ** 2 + (y - moon_params.center[0]) ** 2
     )
-    moon_mask = distances >= int(1.2 * moon_params.radius)
+    moon_mask = distances >= mask_size * moon_params.radius
     return moon_mask
 
 
