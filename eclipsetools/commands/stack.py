@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import click
 import numpy as np
 from tqdm import tqdm
@@ -27,16 +29,17 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
 
     # Mask out moving moon, because it confuses the linear fitting
     ref_moon_params = find_circle(ref_image[:, :, 1], min_radius=400, max_radius=600)
-    ref_moon_mask = _get_moon_mask(ref_image.shape, ref_moon_params, 1.0)
+    ref_moon_mask = _get_moon_mask(ref_image.shape, ref_moon_params, 1.1)
 
     total_weights = np.zeros_like(ref_image)
     weighted_sum = np.zeros_like(ref_image)
 
-    # TODO: Handle weights properly for the moon area, like Druckmüller describes
     for image_path in images_to_stack:
         click.echo(f"Image: {image_path}")
         image = open_image(image_path)
         assert image.shape == ref_image.shape, "Stacked images must have the same shape"
+
+        is_reference = Path(image_path).resolve() == Path(reference_image).resolve()
 
         image_moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
         image_moon_mask = _get_moon_mask(image.shape, image_moon_params, 1.1)
@@ -52,6 +55,11 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
         click.echo(f"Linear fit: y = {linear_coef:.4f} * x + {linear_intercept:.4f}")
 
         weights = weight_function_sigmoid(image)
+
+        if not is_reference:
+            pixels_with_moon = ~ref_moon_mask | ~image_moon_mask
+            weights[pixels_with_moon] = 0.0
+
         weighted_sum += weights * (image - linear_intercept) / linear_coef
         total_weights += weights
 
