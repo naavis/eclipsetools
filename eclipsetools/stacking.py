@@ -34,7 +34,7 @@ def linear_fit(x, y, max_points=10000):
 
 def weight_function_sigmoid(arr):
     return np.minimum(
-        _sigmoid_weight(arr, 0.09, 0.012), 1 - _sigmoid_weight(arr, 0.75, 0.03)
+        _sigmoid_weight(arr, 0.07, 0.009), 1 - _sigmoid_weight(arr, 0.9, 0.013)
     )
 
 
