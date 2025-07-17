@@ -7,9 +7,9 @@ import rawpy
 
 def open_image(path: str) -> np.ndarray:
     """
-    Open either a raw image file or a TIFF file and return as normalized float32 array.
+    Open either a raw image file or a TIFF file and return as normalized float32 or float64 array.
     :param path: Path to the image file
-    :return: Normalized image array as float32 with values in range [0, 1]
+    :return: Normalized image array as float32/float64 with values in range [0, 1]
     """
     _, ext = os.path.splitext(path.lower())
 
@@ -26,7 +26,7 @@ def open_image(path: str) -> np.ndarray:
             return np.float32(image) / 65535.0
         elif image.dtype in [np.float32, np.float64]:
             # Assume already normalized or handle appropriately
-            return np.float32(image)
+            return image
         else:
             # For other dtypes, convert to float32 and normalize by max value
             return np.float32(image) / np.iinfo(image.dtype).max
