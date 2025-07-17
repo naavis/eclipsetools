@@ -28,8 +28,9 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     ref_image -= min(ref_image.min(), 0.0)  # Ensure the reference image is non-negative
 
     # Mask out moving moon, because it confuses the linear fitting
+    mask_size = 1.1
     ref_moon_params = find_circle(ref_image[:, :, 1], min_radius=400, max_radius=600)
-    ref_moon_mask = _get_moon_mask(ref_image.shape, ref_moon_params, 1.1)
+    ref_moon_mask = _get_moon_mask(ref_image.shape, ref_moon_params, mask_size)
 
     total_weights = np.zeros_like(ref_image)
     weighted_sum = np.zeros_like(ref_image)
@@ -42,7 +43,7 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
         is_reference = Path(image_path).resolve() == Path(reference_image).resolve()
 
         image_moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
-        image_moon_mask = _get_moon_mask(image.shape, image_moon_params, 1.1)
+        image_moon_mask = _get_moon_mask(image.shape, image_moon_params, mask_size)
 
         # We linear fit only pixels that are not contaminated by the moon in either image.
         pixels_without_moon = ref_moon_mask & image_moon_mask
