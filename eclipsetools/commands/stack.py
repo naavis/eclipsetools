@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import click
+import joblib
 import numpy as np
 from tqdm import tqdm
 
@@ -14,12 +15,20 @@ from eclipsetools.utils.image_writer import save_tiff
 @click.argument("reference_image", type=click.Path(exists=True))
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(
+    "--n-jobs",
+    default=-1,
+    type=int,
+    help="Number of parallel jobs. Default is -1 (all CPUs).",
+)
+@click.option(
     "--output-file",
     type=click.Path(),
     default="hdr_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
-def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: str):
+def hdr_stack(
+    reference_image: str, images_to_stack: tuple[str], n_jobs: int, output_file: str
+):
     """
     Stack multiple images to HDR stack. Images must be pre-aligned. Images taken with different exposure times
     are combined by linear fitting to the reference image.
@@ -44,17 +53,26 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     total_weights = np.zeros_like(ref_image)
     weighted_sum = np.zeros_like(ref_image)
 
-    for image_path in images_to_stack:
-        weights, calibrated_image = _hdr_process_image(
-            reference_image,
-            ref_image,
-            ref_linear_fit_moon_mask,
-            linear_fit_mask_size,
-            ref_weighting_moon_mask,
-            weighting_mask_size,
-            image_path,
-        )
-
+    for image in tqdm(
+        iterable=joblib.Parallel(
+            n_jobs=n_jobs, prefer="threads", return_as="generator_unordered"
+        )(
+            joblib.delayed(_hdr_process_image)(
+                reference_image,
+                ref_image,
+                ref_linear_fit_moon_mask,
+                linear_fit_mask_size,
+                ref_weighting_moon_mask,
+                weighting_mask_size,
+                image_path,
+            )
+            for image_path in images_to_stack
+        ),
+        total=len(images_to_stack),
+        desc="Combining images",
+        unit="img",
+    ):
+        weights, calibrated_image = image
         weighted_sum += weights * calibrated_image
         total_weights += weights
 
@@ -68,13 +86,13 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
 
 
 def _hdr_process_image(
-    ref_image_path,
-    ref_image,
-    ref_linear_fit_moon_mask,
-    linear_fit_mask_size,
-    ref_weighting_moon_mask,
-    weighting_mask_size,
-    image_path,
+    ref_image_path: str,
+    ref_image: np.ndarray,
+    ref_linear_fit_moon_mask: np.ndarray,
+    linear_fit_mask_size: float,
+    ref_weighting_moon_mask: np.ndarray,
+    weighting_mask_size: float,
+    image_path: str,
 ):
     image = open_image(image_path)
     assert image.shape == ref_image.shape, "Stacked images must have the same shape"
