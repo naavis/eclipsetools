@@ -27,8 +27,10 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     ref_image = open_image(reference_image)
     ref_image -= min(ref_image.min(), 0.0)  # Ensure the reference image is non-negative
 
+    # TODO: Parametrize mask sizes
     # Mask out moving moon, because it confuses the linear fitting
     linear_fit_mask_size = 1.1
+    # TODO: Parametrize moon size range
     ref_moon_params = find_circle(ref_image[:, :, 1], min_radius=400, max_radius=600)
     ref_linear_fit_moon_mask = _get_moon_mask(
         ref_image.shape, ref_moon_params, linear_fit_mask_size
@@ -43,36 +45,17 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     weighted_sum = np.zeros_like(ref_image)
 
     for image_path in images_to_stack:
-        click.echo(f"Image: {image_path}")
-        image = open_image(image_path)
-        assert image.shape == ref_image.shape, "Stacked images must have the same shape"
-
-        is_reference = Path(image_path).resolve() == Path(reference_image).resolve()
-
-        image_moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
-        image_linear_fit_moon_mask = _get_moon_mask(
-            image.shape, image_moon_params, linear_fit_mask_size
+        weights, calibrated_image = _hdr_process_image(
+            reference_image,
+            ref_image,
+            ref_linear_fit_moon_mask,
+            linear_fit_mask_size,
+            ref_weighting_moon_mask,
+            weighting_mask_size,
+            image_path,
         )
-        # We linear fit only pixels that are not contaminated by the moon in either image.
-        pixels_without_moon = ref_linear_fit_moon_mask & image_linear_fit_moon_mask
-        ref_linear_fit_points = ref_image[pixels_without_moon, :].ravel()
-        image_linear_fit_points = image[pixels_without_moon, :].ravel()
 
-        linear_coef, linear_intercept = linear_fit(
-            ref_linear_fit_points, image_linear_fit_points
-        )
-        click.echo(f"Linear fit: y = {linear_coef:.4f} * x + {linear_intercept:.4f}")
-
-        weights = weight_function_sigmoid(image)
-
-        if not is_reference:
-            image_weighting_moon_mask = _get_moon_mask(
-                image.shape, image_moon_params, weighting_mask_size
-            )
-            pixels_with_moon = ~ref_weighting_moon_mask | ~image_weighting_moon_mask
-            weights[pixels_with_moon] = 0.0
-
-        weighted_sum += weights * (image - linear_intercept) / linear_coef
+        weighted_sum += weights * calibrated_image
         total_weights += weights
 
     stacked_image = weighted_sum / total_weights
@@ -82,6 +65,41 @@ def hdr_stack(reference_image: str, images_to_stack: tuple[str], output_file: st
     stacked_image /= max(stacked_image.max(), 1.0)
     click.echo(f"Saving stacked image to {output_file}")
     save_tiff(stacked_image, output_file)
+
+
+def _hdr_process_image(
+    ref_image_path,
+    ref_image,
+    ref_linear_fit_moon_mask,
+    linear_fit_mask_size,
+    ref_weighting_moon_mask,
+    weighting_mask_size,
+    image_path,
+):
+    image = open_image(image_path)
+    assert image.shape == ref_image.shape, "Stacked images must have the same shape"
+    is_reference = Path(image_path).resolve() == Path(ref_image_path).resolve()
+    # TODO: Parametrize moon size range
+    image_moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
+    image_linear_fit_moon_mask = _get_moon_mask(
+        image.shape, image_moon_params, linear_fit_mask_size
+    )
+    # We linear fit only pixels that are not contaminated by the moon in either image.
+    pixels_without_moon = ref_linear_fit_moon_mask & image_linear_fit_moon_mask
+    ref_linear_fit_points = ref_image[pixels_without_moon, :].ravel()
+    image_linear_fit_points = image[pixels_without_moon, :].ravel()
+    linear_coef, linear_intercept = linear_fit(
+        ref_linear_fit_points, image_linear_fit_points
+    )
+    weights = weight_function_sigmoid(image)
+    if not is_reference:
+        image_weighting_moon_mask = _get_moon_mask(
+            image.shape, image_moon_params, weighting_mask_size
+        )
+        pixels_with_moon = ~ref_weighting_moon_mask | ~image_weighting_moon_mask
+        weights[pixels_with_moon] = 0.0
+    calibrated_image = (image - linear_intercept) / linear_coef
+    return weights, calibrated_image
 
 
 def _get_moon_mask(
