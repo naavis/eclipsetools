@@ -15,9 +15,9 @@ def open_image(path: str) -> np.ndarray:
 
     if ext in [".tiff", ".tif"]:
         # Read TIFF file
-        image = cv2.cvtColor(
-            cv2.imread(path, flags=cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB
-        )
+        image = cv2.imread(path, flags=cv2.IMREAD_UNCHANGED)
+        if len(image.shape) == 3:
+            image = image[:, :, ::-1]  # Convert BGR to RGB for color images
 
         # Convert to float32 and normalize
         if image.dtype == np.uint8:
