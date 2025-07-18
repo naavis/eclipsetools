@@ -2,7 +2,7 @@ import click
 
 from eclipsetools.commands.align import align
 from eclipsetools.commands.preprocess import preprocess_only
-from eclipsetools.commands.stack import hdr_stack, average_stack
+from eclipsetools.commands.stack import average_stack, hdr_stack
 
 
 @click.group(context_settings={"show_default": True})

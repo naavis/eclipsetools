@@ -18,7 +18,7 @@ def find_circle(
     detected_circles = cv2.HoughCircles(
         image=((np.clip(image, 0.0, 1.0) ** 0.5) * 255).astype(np.uint8),
         method=cv2.HOUGH_GRADIENT,
-        dp=3,  # Inverse of accumulator resolution, i.e. 3 means 1/3 resolution of original image
+        dp=2,  # Inverse of accumulator resolution, i.e. 3 means 1/3 resolution of original image
         minDist=image.shape[0] / 16.0,  # Minimum distance between found circles
         param1=50,  # Upper threshold for Canny edge detector
         param2=30,  # Accumulator threshold for finding images (smaller -> more circles detected)
@@ -48,3 +48,14 @@ def _plot_circles(detected_circles, image):
         ax.imshow(image)
         ax.add_patch(Circle((a, b), r, fill=False, edgecolor="red"))
         plt.show()
+
+
+def get_binary_moon_mask(
+    shape: tuple, moon_params: DetectedCircle, mask_size: float
+) -> np.ndarray:
+    y, x = np.ogrid[: shape[0], : shape[1]]
+    distances = np.sqrt(
+        (x - moon_params.center[1]) ** 2 + (y - moon_params.center[0]) ** 2
+    )
+    moon_mask = distances >= mask_size * moon_params.radius
+    return moon_mask
