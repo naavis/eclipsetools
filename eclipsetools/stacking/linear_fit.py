@@ -167,7 +167,14 @@ def solve_global_linear_fits(
         0
     ]  # result is [a_0, b_0, a_1, b_1, ..., a_N, b_N]
 
-    # Return results as dict
+    a_ref = result[2 * ref_image_index]
+    b_ref = result[2 * ref_image_index + 1]
+
+    # Normalize so that a_ref = 1 and b_ref = 0
+    result[0::2] /= a_ref
+    result[1::2] -= b_ref
+    result[1::2] /= a_ref
+
     result_dict = {
         path: (result[2 * i], result[2 * i + 1]) for path, i in index_map.items()
     }
