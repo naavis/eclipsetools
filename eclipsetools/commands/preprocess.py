@@ -135,11 +135,11 @@ def _open_and_preprocess(
     rgb_image = open_image(image_path)
     if mask_inner_radius_px is None:
         image_preproc = preprocess_with_auto_mask(
-            rgb_image, mask_inner_radius_multiplier, mask_outer_radius_multiplier
+            rgb_image, mask_inner_radius_multiplier, mask_outer_radius_multiplier, 0
         )
     else:
         image_preproc = preprocess_with_fixed_mask(
-            rgb_image, mask_inner_radius_px, mask_outer_radius_multiplier
+            rgb_image, mask_inner_radius_px, mask_outer_radius_multiplier, 0
         )
 
     # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
