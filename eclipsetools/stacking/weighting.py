@@ -1,11 +1,8 @@
-import numpy as np
-
-
-def weight_function_sigmoid(arr, clip_lower=True, clip_upper=True):
-    lower = _sigmoid_weight(arr, 0.1, 0.01) if clip_lower else np.ones_like(arr)
-    upper = 1 - _sigmoid_weight(arr, 0.75, 0.03) if clip_upper else np.ones_like(arr)
-    return np.minimum(lower, upper)
-
-
-def _sigmoid_weight(x, center=0.5, width=0.1):
-    return 1 / (1 + np.exp(-(x - center) / width))
+def weight_function_hat(image):
+    """
+    Weight function for stacking images, using a quadratic "hat" function. The smoothly goes from (0.0, 0.0) to
+    (0.5, 1.0) and back to (1.0, 0.0).
+    :param image: Image data as a Numpy array, normalized to [0.0, 1.0].
+    :return: Weights as a Numpy array, same shape as the input image.
+    """
+    return 4.0 * image * (1.0 - image)

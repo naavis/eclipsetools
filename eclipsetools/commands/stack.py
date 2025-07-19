@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from eclipsetools.stacking.linear_fit import fit_eclipse_image_pair
 from eclipsetools.stacking.linear_fit import solve_global_linear_fits
-from eclipsetools.stacking.weighting import weight_function_sigmoid
+from eclipsetools.stacking.weighting import weight_function_hat
 from eclipsetools.utils.circle_finder import find_circle, get_binary_moon_mask
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
@@ -138,7 +138,6 @@ def hdr_stack(
             joblib.delayed(_process_image_for_stacking)(
                 image_path,
                 linear_fits[image_path],
-                reference_image,
                 ref_moon_mask,
                 weighting_mask_size,
             )
@@ -152,7 +151,12 @@ def hdr_stack(
         weighted_sum += weights * calibrated_image
         total_weights += weights
 
+    # Masked and saturated pixels may end up being unfilled in the final image.
+    # These pixels are filled with data from the reference image.
+    unfilled_pixels = total_weights == 0
+    total_weights[unfilled_pixels] = 1.0  # Avoid division by zero
     stacked_image = weighted_sum / total_weights
+    stacked_image[unfilled_pixels] = ref_image_data[unfilled_pixels]
 
     # Ensure there are no negative values, and normalize values to maximum of 1.0
     stacked_image -= min(stacked_image.min(), 0.0)
@@ -180,19 +184,16 @@ def form_image_pairs(images_to_stack, n_jobs, show_progress=True):
 def _process_image_for_stacking(
     image_path: str,
     linear_fit_params: tuple[float, float],
-    ref_image_path: str,
     ref_moon_mask: np.ndarray,
     mask_size: float,
 ):
     linear_coef, linear_intercept = linear_fit_params
     image = open_image(image_path)
-    is_reference = Path(image_path).resolve() == Path(ref_image_path).resolve()
     # TODO: Parametrize moon size
     moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
-    weights = weight_function_sigmoid(image, clip_upper=not is_reference)
-    if not is_reference:
-        image_moon_mask = get_binary_moon_mask(image.shape, moon_params, mask_size)
-        pixels_with_moon = ~ref_moon_mask | ~image_moon_mask
-        weights[pixels_with_moon] = 0.0
+    weights = weight_function_hat(image)
+    image_moon_mask = get_binary_moon_mask(image.shape, moon_params, mask_size)
+    pixels_with_moon = ~ref_moon_mask | ~image_moon_mask
+    weights[pixels_with_moon] = 0.0
     calibrated_image = (image - linear_intercept) / linear_coef
     return weights, calibrated_image
