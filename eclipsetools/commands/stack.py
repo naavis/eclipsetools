@@ -55,13 +55,24 @@ def average_stack(images_to_stack: list[str], output_file: str):
     help="Number of parallel jobs. Default is -1 (all CPUs).",
 )
 @click.option(
+    "--fit-intercept",
+    is_flag=True,
+    default=False,
+    help="Fit the intercept in the linear regression. If not set, the linear fit is forced through the origin."
+    "This option might improve fit quality for uncalibrated images.",
+)
+@click.option(
     "--output-file",
     type=click.Path(),
     default="hdr_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
 def hdr_stack(
-    reference_image: str, images_to_stack: list[str], n_jobs: int, output_file: str
+    reference_image: str,
+    images_to_stack: list[str],
+    fit_intercept: bool,
+    n_jobs: int,
+    output_file: str,
 ):
     """
     Stack multiple images to HDR stack. Images must be pre-aligned. Images taken with different exposure times
@@ -100,7 +111,7 @@ def hdr_stack(
                 n_jobs=n_jobs, prefer="threads", return_as="generator"
             )(
                 joblib.delayed(fit_eclipse_image_pair)(
-                    image_a, image_b, linear_fit_mask_size
+                    image_a, image_b, fit_intercept, linear_fit_mask_size
                 )
                 for image_a, image_b in image_pairs
             ),

@@ -3,7 +3,7 @@ from typing import Any
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import lsqr
-from sklearn.linear_model import RANSACRegressor
+from sklearn.linear_model import RANSACRegressor, LinearRegression
 
 from eclipsetools.utils.circle_finder import find_circle, get_binary_moon_mask
 from eclipsetools.utils.image_reader import open_image
@@ -12,6 +12,7 @@ from eclipsetools.utils.image_reader import open_image
 def fit_eclipse_image_pair(
     image_path_a: str,
     image_path_b: str,
+    fit_intercept: bool,
     moon_mask_size: float,
     moon_min_radius: int = 400,
     moon_max_radius: int = 600,
@@ -21,6 +22,7 @@ def fit_eclipse_image_pair(
 
     :param image_path_a: Path to first image
     :param image_path_b: Path to second image
+    :param fit_intercept: Whether to fit the intercept in the linear regression
     :param moon_mask_size: Size of the moon mask relative to the moon radius
     :param moon_min_radius: Minimum radius of the moon to detect in pixels
     :param moon_max_radius: Maximum radius of the moon to detect in pixels
@@ -44,12 +46,14 @@ def fit_eclipse_image_pair(
     img_a_points = img_a[pixels_without_moon, :].ravel()
     img_b_points = img_b[pixels_without_moon, :].ravel()
 
-    linear_coef, linear_intercept = _linear_fit(img_a_points, img_b_points)
+    linear_coef, linear_intercept = _linear_fit(
+        img_a_points, img_b_points, fit_intercept
+    )
 
     return image_path_a, image_path_b, (linear_coef, linear_intercept)
 
 
-def _linear_fit(x, y, max_points=10000):
+def _linear_fit(x, y, fit_intercept, max_points=10000):
     # We care more about the top part of the signal than the noisy bottom part, which can skew the linear fit.
     # We only use about max_points data points to find the percentile, because that is slow.
     percentile_limiter = max(len(x) // max_points, 1)
@@ -72,7 +76,9 @@ def _linear_fit(x, y, max_points=10000):
     x_valid = x_valid[::div]
     y_valid = y_valid[::div]
 
-    model = RANSACRegressor(min_samples=100)
+    model = RANSACRegressor(
+        min_samples=100, estimator=LinearRegression(fit_intercept=fit_intercept)
+    )
     model.fit(x_valid.reshape(-1, 1), y_valid)
     linear_coef = model.estimator_.coef_[0]
     linear_intercept = model.estimator_.intercept_
