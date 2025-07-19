@@ -146,14 +146,14 @@ def solve_global_linear_fits(
     # Add fixed constraint: a_0 = 1, b_0 = 0
     ref_image_index = index_map[ref_image_path]
 
-    row_a0 = np.zeros(n_vars)
-    row_a0[2 * ref_image_index] = 1
-    equations.append(row_a0)
+    row_a_ref = np.zeros(n_vars)
+    row_a_ref[2 * ref_image_index] = 1
+    equations.append(row_a_ref)
     values.append(1.0)
 
-    row_b0 = np.zeros(n_vars)
-    row_b0[2 * ref_image_index + 1] = 1
-    equations.append(row_b0)
+    row_b_ref = np.zeros(n_vars)
+    row_b_ref[2 * ref_image_index + 1] = 1
+    equations.append(row_b_ref)
     values.append(0.0)
 
     # Build sparse matrix and solve
