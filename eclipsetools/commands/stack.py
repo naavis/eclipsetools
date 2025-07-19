@@ -5,11 +5,9 @@ import joblib
 import numpy as np
 from tqdm import tqdm
 
-from eclipsetools.stacking import (
-    weight_function_sigmoid,
-    fit_eclipse_image_pair,
-    solve_global_linear_fits,
-)
+from eclipsetools.stacking.linear_fit import fit_eclipse_image_pair
+from eclipsetools.stacking.linear_fit import solve_global_linear_fits
+from eclipsetools.stacking.weighting import weight_function_sigmoid
 from eclipsetools.utils.circle_finder import find_circle, get_binary_moon_mask
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
