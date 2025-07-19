@@ -115,7 +115,7 @@ def hdr_stack(
     linear_fits = solve_global_linear_fits(linear_fit_results, reference_image)
 
     # Size of the moon mask relative to the moon radius for stacking
-    weighting_mask_size = 1.025
+    weighting_mask_size = 1.03
 
     ref_image_data = open_image(reference_image)
 
