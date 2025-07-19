@@ -89,15 +89,7 @@ def hdr_stack(
         )
         return
 
-    # Sort images by brightness
-    sorted_images = [
-        path for path, _brightness in sort_images_by_brightness(images_to_stack, n_jobs)
-    ]
-
-    # Form pairs of consecutive images for linear fitting
-    image_pairs = [
-        (sorted_images[i], sorted_images[i + 1]) for i in range(len(sorted_images) - 1)
-    ]
+    image_pairs = form_image_pairs(images_to_stack, n_jobs)
 
     # Size of the moon mask relative to the moon radius for linear fitting
     linear_fit_mask_size = 1.01
@@ -167,6 +159,22 @@ def hdr_stack(
     stacked_image /= max(stacked_image.max(), 1.0)
     click.echo(f"Saving stacked image to {output_file}")
     save_tiff(stacked_image, output_file)
+
+
+def form_image_pairs(images_to_stack, n_jobs, show_progress=True):
+    # Sort images by brightness
+    sorted_images = [
+        path
+        for path, _brightness in sort_images_by_brightness(
+            images_to_stack, n_jobs, show_progress=show_progress
+        )
+    ]
+
+    # Form pairs of consecutive images for linear fitting
+    image_pairs = [
+        (sorted_images[i], sorted_images[i + 1]) for i in range(len(sorted_images) - 1)
+    ]
+    return image_pairs
 
 
 def _process_image_for_stacking(
