@@ -7,11 +7,11 @@ from tqdm import tqdm
 
 from eclipsetools.stacking.linear_fit import fit_eclipse_image_pair
 from eclipsetools.stacking.linear_fit import solve_global_linear_fits
+from eclipsetools.stacking.sorting import sort_images_by_brightness
 from eclipsetools.stacking.weighting import weight_function_hat
 from eclipsetools.utils.circle_finder import find_circle, get_binary_moon_mask
 from eclipsetools.utils.image_reader import open_image
 from eclipsetools.utils.image_writer import save_tiff
-from eclipsetools.utils.sorting import sort_images_by_brightness
 
 
 @click.command()
