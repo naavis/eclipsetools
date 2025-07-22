@@ -140,6 +140,7 @@ def hdr_stack(
                 linear_fits[image_path],
                 ref_moon_mask,
                 weighting_mask_size,
+                ref_moon_params.radius,
             )
             for image_path in linear_fits.keys()
         ),
@@ -186,11 +187,15 @@ def _process_image_for_stacking(
     linear_fit_params: tuple[float, float],
     ref_moon_mask: np.ndarray,
     mask_size: float,
+    ref_moon_size_px: float,
 ):
     linear_coef, linear_intercept = linear_fit_params
     image = open_image(image_path)
     # TODO: Parametrize moon size
     moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
+    # The moon radius can be underestimated in very saturated images, so we use the reference moon size
+    moon_params.radius = ref_moon_size_px
+
     weights = weight_function_hat(image)
     image_moon_mask = get_binary_moon_mask(image.shape, moon_params, mask_size)
     pixels_with_moon = ~ref_moon_mask | ~image_moon_mask
