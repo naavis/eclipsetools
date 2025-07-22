@@ -114,21 +114,23 @@ def hdr_stack(
     click.echo("Solving global linear fit for all images")
     linear_fits = solve_global_linear_fits(linear_fit_results, reference_image)
 
-    # Size of the moon mask relative to the moon radius for stacking
-    weighting_mask_size = 1.01
-
     ref_image_data = open_image(reference_image)
 
     # TODO: Parametrize moon size
     ref_moon_params = find_circle(
         ref_image_data[:, :, 1], min_radius=400, max_radius=600
     )
+    # We use a smaller mask for the reference image to have a cleaner moon edge in the final stack
+    ref_moon_weighting_mask_size = 1.005
     ref_moon_mask = get_binary_moon_mask(
-        ref_image_data.shape, ref_moon_params, weighting_mask_size
+        ref_image_data.shape, ref_moon_params, ref_moon_weighting_mask_size
     )
 
     total_weights = np.zeros_like(ref_image_data, dtype=np.float64)
     weighted_sum = np.zeros_like(ref_image_data, dtype=np.float64)
+
+    # Size of the moon mask relative to the moon radius for stacking
+    weighting_mask_size = 1.01
 
     # Process images in parallel for stacking
     for image in tqdm(
