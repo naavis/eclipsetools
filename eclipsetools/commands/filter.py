@@ -14,7 +14,6 @@ from eclipsetools.utils.image_writer import save_tiff
 
 @click.command()
 @click.argument("input_file", type=click.Path(exists=True))
-@click.argument("output_file", type=click.Path())
 @click.option(
     "--sigma",
     type=float,
@@ -37,6 +36,12 @@ from eclipsetools.utils.image_writer import save_tiff
     required=True,
 )
 @click.option("--mask-path", type=click.Path(exists=True), help="Path to mask image.")
+@click.option(
+    "--output-file",
+    type=click.Path(),
+    default="unsharp_masked_image.tiff",
+    help="Output filename for the filtered image tiff file.",
+)
 def unsharp_mask_filter(
     input_file: str,
     sigma: float,
