@@ -68,7 +68,7 @@ def unsharp_mask_filter(
         click.echo("Finding moon in the image")
         moon_mask = get_binary_moon_mask(image_l.shape, moon_params, 1.005)
 
-    kernel_size = int(max(sigma_tangent, sigma_radial) * 4) | 1
+    kernel_size = get_kernel_size(sigma_tangent, sigma_radial)
     dilated_mask = cv2.dilate(
         moon_mask.astype(np.uint8),
         cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size)),
@@ -107,6 +107,16 @@ def unsharp_mask_filter(
 
     click.echo(f"Saving filtered image to {output_file}")
     save_tiff(processed_rgb, output_file, embed_srgb=True)
+
+
+def get_kernel_size(sigma_tangent: float, sigma_radial: float) -> int:
+    """
+    Calculate the kernel size based on the maximum of the two sigmas.
+    The kernel size is always odd and at least 3.
+    """
+    max_sigma = max(sigma_tangent, sigma_radial)
+    kernel_size = int(max_sigma * 4) | 1  # Ensure it's odd
+    return max(kernel_size, 3)  # Ensure minimum size of 3
 
 
 def validate_sigma_parameters(sigma, sigma_tangent, sigma_radial):
@@ -216,7 +226,7 @@ def _partial_convolution(
     sigma_radial: float,
     center: tuple[float, float],
 ) -> np.ndarray:
-    kernel_size = int(max(sigma_tangent, sigma_radial) * 4) | 1
+    kernel_size = get_kernel_size(sigma_tangent, sigma_radial)
     padding = kernel_size // 2
 
     padded_image = np.pad(image, padding, mode="constant", constant_values=0)
