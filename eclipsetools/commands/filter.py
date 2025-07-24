@@ -256,34 +256,32 @@ def _partial_convolution(
         )
 
 
-@numba.jit(nogil=True)
-def _adaptive_kernel(
-    r_grid: np.ndarray,
-    theta_grid: np.ndarray,
-    sigma_tangent: float,
-    sigma_radial: float,
-) -> np.ndarray:
+def _compute_polar_grid(
+    image_shape: tuple[int, ...], center: tuple[float, float]
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Create an adaptive kernel based on the distance from the center and angle.
-    The kernel size is deduced from r_grid size.
+    Compute radius and angle (polar coordinates) for every pixel in a 2D array.
+
+    :param image_shape: (height, width) of the image
+    :param center: (cy, cx) pixel coordinates of the center
+    :return: r_grid - 2D array of radii, theta_grid - 2D array of angles in radians, [0, 2π)
     """
-    cx = r_grid.shape[1] // 2
-    cy = r_grid.shape[0] // 2
-    cr = r_grid[cy, cx]  # Center radius
-    ct = theta_grid[cy, cx]  # Center angle
+    height, width = image_shape
+    cy, cx = center
 
-    # Calculate circular angular distance (handles 0/2π wraparound)
-    theta_diff = theta_grid - ct
-    theta_diff = np.minimum(np.abs(theta_diff), 2 * np.pi - np.abs(theta_diff))
+    # Create grid of (x, y) coordinates
+    y_indices, x_indices = np.indices((height, width))
 
-    exponent = np.zeros_like(r_grid, dtype=np.float32)
-    # Tiny sigma values can cause artifacts, and an unsharp mask of less than 0.1 does not make any practical sense
-    if sigma_radial > 0.1:
-        exponent += -((r_grid - cr) ** 2) / (2 * sigma_radial**2)
-    if sigma_tangent > 0.1:
-        exponent += -((r_grid * theta_diff) ** 2) / (2 * sigma_tangent**2)
+    # Cartesian offsets from center
+    dx = x_indices - cx
+    dy = y_indices - cy
 
-    return np.exp(exponent).astype(np.float32)
+    # Polar coordinates
+    r_grid = np.sqrt(dx**2 + dy**2, dtype=np.float32)
+    theta_grid = np.arctan2(dy, dx, dtype=np.float32)
+    theta_grid = np.mod(theta_grid, 2 * np.pi, dtype=np.float32)  # Normalize to [0, 2π)
+
+    return r_grid, theta_grid
 
 
 @numba.jit(nogil=True, parallel=True)
@@ -340,29 +338,31 @@ def _convolution_loop(
     return result
 
 
-def _compute_polar_grid(
-    image_shape: tuple[int, ...], center: tuple[float, float]
-) -> tuple[np.ndarray, np.ndarray]:
+@numba.jit(nogil=True)
+def _adaptive_kernel(
+    r_grid: np.ndarray,
+    theta_grid: np.ndarray,
+    sigma_tangent: float,
+    sigma_radial: float,
+) -> np.ndarray:
     """
-    Compute radius and angle (polar coordinates) for every pixel in a 2D array.
-
-    :param image_shape: (height, width) of the image
-    :param center: (cy, cx) pixel coordinates of the center
-    :return: r_grid - 2D array of radii, theta_grid - 2D array of angles in radians, [0, 2π)
+    Create an adaptive kernel based on the distance from the center and angle.
+    The kernel size is deduced from r_grid size.
     """
-    height, width = image_shape
-    cy, cx = center
+    cx = r_grid.shape[1] // 2
+    cy = r_grid.shape[0] // 2
+    cr = r_grid[cy, cx]  # Center radius
+    ct = theta_grid[cy, cx]  # Center angle
 
-    # Create grid of (x, y) coordinates
-    y_indices, x_indices = np.indices((height, width))
+    # Calculate circular angular distance (handles 0/2π wraparound)
+    theta_diff = theta_grid - ct
+    theta_diff = np.minimum(np.abs(theta_diff), 2 * np.pi - np.abs(theta_diff))
 
-    # Cartesian offsets from center
-    dx = x_indices - cx
-    dy = y_indices - cy
+    exponent = np.zeros_like(r_grid, dtype=np.float32)
+    # Tiny sigma values can cause artifacts, and an unsharp mask of less than 0.1 does not make any practical sense
+    if sigma_radial > 0.1:
+        exponent += -((r_grid - cr) ** 2) / (2 * sigma_radial**2)
+    if sigma_tangent > 0.1:
+        exponent += -((r_grid * theta_diff) ** 2) / (2 * sigma_tangent**2)
 
-    # Polar coordinates
-    r_grid = np.sqrt(dx**2 + dy**2, dtype=np.float32)
-    theta_grid = np.arctan2(dy, dx, dtype=np.float32)
-    theta_grid = np.mod(theta_grid, 2 * np.pi, dtype=np.float32)  # Normalize to [0, 2π)
-
-    return r_grid, theta_grid
+    return np.exp(exponent).astype(np.float32)
