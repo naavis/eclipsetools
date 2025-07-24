@@ -14,13 +14,34 @@ from eclipsetools.utils.image_writer import save_tiff
 
 @click.command()
 @click.argument("input_file", type=click.Path(exists=True))
-@click.argument("sigma", type=float)
-@click.argument("filter_amount", type=float)
 @click.argument("output_file", type=click.Path())
+@click.option(
+    "--sigma",
+    type=float,
+    help="Sigma for the Gaussian convolution kernel. Will be ignored if sigma_tangent and sigma_radial are provided.",
+)
+@click.option(
+    "--sigma-tangent",
+    type=float,
+    help="Sigma for the tangential component of the Gaussian convolution kernel. Must be used together with sigma_radial.",
+)
+@click.option(
+    "--sigma-radial",
+    type=float,
+    help="Sigma for the radial component of the Gaussian convolution kernel. Must be used together with sigma_tangent.",
+)
+@click.option(
+    "--filter-amount",
+    type=float,
+    help="Amount of unsharp masking to apply.",
+    required=True,
+)
 @click.option("--mask-path", type=click.Path(exists=True), help="Path to mask image.")
 def unsharp_mask_filter(
     input_file: str,
     sigma: float,
+    sigma_tangent: float,
+    sigma_radial: float,
     filter_amount: float,
     output_file: str,
     mask_path: str,
@@ -29,6 +50,11 @@ def unsharp_mask_filter(
     Process image using an adaptive unsharp mask filter using partial convolution and a spatially varying convolution
     kernel.
     """
+
+    validate_sigma_parameters(sigma, sigma_tangent, sigma_radial)
+    if sigma is not None:
+        sigma_tangent = sigma_radial = sigma
+
     image = open_image(input_file)
     lab_image = skimage.color.rgb2lab(image)
     image_l = lab_image[:, :, 0] / 100.0  # Scale L channel to [0, 1]
@@ -42,7 +68,7 @@ def unsharp_mask_filter(
         click.echo("Finding moon in the image")
         moon_mask = get_binary_moon_mask(image_l.shape, moon_params, 1.005)
 
-    kernel_size = int(sigma * 4) | 1
+    kernel_size = int(max(sigma_tangent, sigma_radial) * 4) | 1
     dilated_mask = cv2.dilate(
         moon_mask.astype(np.uint8),
         cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size)),
@@ -58,7 +84,11 @@ def unsharp_mask_filter(
         )
 
     convolved_image = _partial_convolution(
-        inpainted_image, np.ones_like(moon_mask), sigma, moon_params.center
+        inpainted_image,
+        np.ones_like(moon_mask),
+        sigma_tangent,
+        sigma_radial,
+        moon_params.center,
     )
     convolved_image = np.where(moon_mask, convolved_image, image_l)
 
@@ -77,6 +107,18 @@ def unsharp_mask_filter(
 
     click.echo(f"Saving filtered image to {output_file}")
     save_tiff(processed_rgb, output_file, embed_srgb=True)
+
+
+def validate_sigma_parameters(sigma, sigma_tangent, sigma_radial):
+    s = sigma is not None
+    st = sigma_tangent is not None
+    sr = sigma_radial is not None
+    if (s and not (st or sr)) or (not s and (st and sr)):
+        return
+
+    raise click.BadParameter(
+        "You must provide either a single sigma value or both --sigma-tangent and --sigma-radial"
+    )
 
 
 @numba.jit(nogil=True)
@@ -168,10 +210,13 @@ def _fit_plane_and_recover_pixel(
 
 
 def _partial_convolution(
-    image: np.ndarray, mask: np.ndarray, sigma: float, center: tuple[float, float]
+    image: np.ndarray,
+    mask: np.ndarray,
+    sigma_tangent: float,
+    sigma_radial: float,
+    center: tuple[float, float],
 ) -> np.ndarray:
-
-    kernel_size = int(sigma * 4) | 1
+    kernel_size = int(max(sigma_tangent, sigma_radial) * 4) | 1
     padding = kernel_size // 2
 
     padded_image = np.pad(image, padding, mode="constant", constant_values=0)
@@ -190,14 +235,18 @@ def _partial_convolution(
             padded_mask,
             padded_r_grid,
             padded_theta_grid,
-            sigma,
+            sigma_tangent,
+            sigma_radial,
             progress_proxy,
         )
 
 
 @numba.jit(nogil=True)
 def _adaptive_kernel(
-    r_grid: np.ndarray, theta_grid: np.ndarray, sigma: float
+    r_grid: np.ndarray,
+    theta_grid: np.ndarray,
+    sigma_tangent: float,
+    sigma_radial: float,
 ) -> np.ndarray:
     """
     Create an adaptive kernel based on the distance from the center and angle.
@@ -212,7 +261,14 @@ def _adaptive_kernel(
     theta_diff = theta_grid - ct
     theta_diff = np.minimum(np.abs(theta_diff), 2 * np.pi - np.abs(theta_diff))
 
-    return np.exp(-((r_grid - cr) ** 2 + (r_grid * theta_diff) ** 2) / (2 * sigma**2))
+    exponent = np.zeros_like(r_grid)
+    # Tiny sigma values can cause artifacts, and an unsharp mask of less than 0.1 does not make any practical sense
+    if sigma_radial > 0.1:
+        exponent += -((r_grid - cr) ** 2) / (2 * sigma_radial**2)
+    if sigma_tangent > 0.1:
+        exponent += -((r_grid * theta_diff) ** 2) / (2 * sigma_tangent**2)
+
+    return np.exp(exponent)
 
 
 @numba.jit(nogil=True, parallel=True)
@@ -223,7 +279,8 @@ def _convolution_loop(
     padded_mask: np.ndarray,
     padded_r_grid: np.ndarray,
     padded_theta_grid: np.ndarray,
-    sigma: float,
+    sigma_tangent: float,
+    sigma_radial: float,
     progress_proxy: ProgressBar,
 ) -> np.ndarray:
     half_kernel = kernel_size // 2
@@ -248,7 +305,8 @@ def _convolution_loop(
             kernel = _adaptive_kernel(
                 padded_r_grid[slice_start_i:slice_end_i, slice_start_j:slice_end_j],
                 padded_theta_grid[slice_start_i:slice_end_i, slice_start_j:slice_end_j],
-                sigma,
+                sigma_tangent,
+                sigma_radial,
             )
 
             mask_region = padded_mask[
