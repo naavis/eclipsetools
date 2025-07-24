@@ -271,14 +271,14 @@ def _adaptive_kernel(
     theta_diff = theta_grid - ct
     theta_diff = np.minimum(np.abs(theta_diff), 2 * np.pi - np.abs(theta_diff))
 
-    exponent = np.zeros_like(r_grid)
+    exponent = np.zeros_like(r_grid, dtype=np.float32)
     # Tiny sigma values can cause artifacts, and an unsharp mask of less than 0.1 does not make any practical sense
     if sigma_radial > 0.1:
         exponent += -((r_grid - cr) ** 2) / (2 * sigma_radial**2)
     if sigma_tangent > 0.1:
         exponent += -((r_grid * theta_diff) ** 2) / (2 * sigma_tangent**2)
 
-    return np.exp(exponent)
+    return np.exp(exponent).astype(np.float32)
 
 
 @numba.jit(nogil=True, parallel=True)
@@ -356,8 +356,8 @@ def _compute_polar_grid(
     dy = y_indices - cy
 
     # Polar coordinates
-    r_grid = np.sqrt(dx**2 + dy**2)
-    theta_grid = np.arctan2(dy, dx)
-    theta_grid = np.mod(theta_grid, 2 * np.pi)  # Normalize to [0, 2π)
+    r_grid = np.sqrt(dx**2 + dy**2, dtype=np.float32)
+    theta_grid = np.arctan2(dy, dx, dtype=np.float32)
+    theta_grid = np.mod(theta_grid, 2 * np.pi, dtype=np.float32)  # Normalize to [0, 2π)
 
     return r_grid, theta_grid
