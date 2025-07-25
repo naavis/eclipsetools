@@ -12,10 +12,12 @@ def preprocess_with_auto_mask(
     mask_inner_radius_multiplier: float,
     mask_outer_radius_multiplier: float,
     crop: int,
+    moon_min_radius: int,
+    moon_max_radius: int,
 ) -> np.ndarray:
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
     moon = eclipsetools.utils.circle_finder.find_circle(
-        image, min_radius=400, max_radius=600
+        image, moon_min_radius, moon_max_radius
     )
     assert (
         moon is not None
@@ -43,10 +45,12 @@ def preprocess_with_fixed_mask(
     mask_inner_radius_px: float,
     mask_outer_radius_multiplier: float,
     crop: int,
+    moon_min_radius: int,
+    moon_max_radius: int,
 ) -> np.ndarray:
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
     moon = eclipsetools.utils.circle_finder.find_circle(
-        image, min_radius=400, max_radius=600
+        image, moon_min_radius, moon_max_radius
     )
     assert (
         moon is not None

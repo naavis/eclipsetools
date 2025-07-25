@@ -68,6 +68,18 @@ from eclipsetools.utils.image_writer import save_tiff
     help="Crop this many pixels from each side during preprocessing. This helps dealing with artifacts "
     "caused by stacking several images and using the stack as a reference image.",
 )
+@click.option(
+    "--min-moon-radius",
+    default=400,
+    type=int,
+    help="Minimum moon radius in pixels for moon detection.",
+)
+@click.option(
+    "--max-moon-radius",
+    default=2000,
+    type=int,
+    help="Maximum moon radius in pixels for moon detection.",
+)
 def align(
     reference_image: str,
     images_to_align: list[str],
@@ -77,6 +89,8 @@ def align(
     mask_mode: MaskMode,
     mask_inner_radius: float,
     mask_outer_radius: float,
+    moon_min_radius: int,
+    moon_max_radius: int,
     save_preprocessed_post_alignment_images: bool,
     crop: int,
 ):
@@ -95,10 +109,17 @@ def align(
             max_mask_inner_radius_px,
             mask_outer_radius,
             crop,
+            moon_min_radius,
+            moon_max_radius,
         )
     else:
         ref_image = preprocess_with_auto_mask(
-            open_image(reference_image), mask_inner_radius, mask_outer_radius, crop
+            open_image(reference_image),
+            mask_inner_radius,
+            mask_outer_radius,
+            crop,
+            moon_min_radius,
+            moon_max_radius,
         )
 
     click.echo(f"Processing {len(images_to_align)} images...")
@@ -151,9 +172,11 @@ def _align_single_image(
     output_dir: str,
     mask_inner_radius: float,
     mask_outer_radius: float,
-    mask_inner_radius_px: float | None = None,
-    save_preprocessed_post_alignment_images: bool = False,
-    crop=0,
+    mask_inner_radius_px: float | None,
+    save_preprocessed_post_alignment_images: bool,
+    crop: int,
+    moon_min_radius: int,
+    moon_max_radius: int,
 ) -> tuple[str, float, float, tuple[float, float]]:
     """
     Process a single image alignment operation.
@@ -166,16 +189,28 @@ def _align_single_image(
     :param mask_inner_radius_px: Inner radius of the annulus mask in pixels. If None, use the auto mask.
     :param save_preprocessed_post_alignment_images: If true, save preprocessed images after alignment.
     :param crop: Number of pixels to crop from each side during preprocessing.
+    :param moon_min_radius: Minimum moon radius in pixels for moon detection.
+    :param moon_max_radius: Maximum moon radius in pixels for moon detection.
     :return: Tuple of image path, scale, rotation in degrees, and translation vector (dy, dx)
     """
     raw_image = open_image(image_path)
     if mask_inner_radius_px is None:
         image_to_align = preprocess_with_auto_mask(
-            raw_image, mask_inner_radius, mask_outer_radius, crop
+            raw_image,
+            mask_inner_radius,
+            mask_outer_radius,
+            crop,
+            moon_min_radius,
+            moon_max_radius,
         )
     else:
         image_to_align = preprocess_with_fixed_mask(
-            raw_image, mask_inner_radius_px, mask_outer_radius, crop
+            raw_image,
+            mask_inner_radius_px,
+            mask_outer_radius,
+            crop,
+            moon_min_radius,
+            moon_max_radius,
         )
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image, image_to_align, low_pass_sigma, allow_scale=False

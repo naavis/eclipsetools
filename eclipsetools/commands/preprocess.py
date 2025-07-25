@@ -30,6 +30,18 @@ from eclipsetools.utils.image_writer import save_tiff
     help="Directory to save preprocessed images.",
 )
 @click.option(
+    "--moon-min-radius",
+    default=200,
+    type=int,
+    help="Minimum moon radius in pixels for moon detection.",
+)
+@click.option(
+    "--moon-max-radius",
+    default=2000,
+    type=int,
+    help="Maximum moon radius in pixels for moon detection.",
+)
+@click.option(
     "--mask-mode",
     type=click.Choice(MaskMode),
     default=MaskMode.AUTO_PER_IMAGE,
@@ -53,6 +65,8 @@ def preprocess_only(
     images_to_preprocess: list[str],
     n_jobs: int,
     output_dir: str,
+    moon_min_radius: int,
+    moon_max_radius: int,
     mask_mode: MaskMode,
     mask_inner_radius: float,
     mask_outer_radius: float,
@@ -90,6 +104,8 @@ def preprocess_only(
                     mask_inner_radius,
                     mask_outer_radius,
                     max_mask_inner_radius_px,
+                    moon_min_radius,
+                    moon_max_radius,
                 )
                 for path in images_to_preprocess
             ),
@@ -130,16 +146,28 @@ def _open_and_preprocess(
     output_dir: str,
     mask_inner_radius_multiplier: float,
     mask_outer_radius_multiplier: float,
-    mask_inner_radius_px: float | None = None,
+    mask_inner_radius_px: float | None,
+    moon_min_radius: int,
+    moon_max_radius: int,
 ):
     rgb_image = open_image(image_path)
     if mask_inner_radius_px is None:
         image_preproc = preprocess_with_auto_mask(
-            rgb_image, mask_inner_radius_multiplier, mask_outer_radius_multiplier, 0
+            rgb_image,
+            mask_inner_radius_multiplier,
+            mask_outer_radius_multiplier,
+            0,
+            moon_min_radius,
+            moon_max_radius,
         )
     else:
         image_preproc = preprocess_with_fixed_mask(
-            rgb_image, mask_inner_radius_px, mask_outer_radius_multiplier, 0
+            rgb_image,
+            mask_inner_radius_px,
+            mask_outer_radius_multiplier,
+            0,
+            moon_min_radius,
+            moon_max_radius,
         )
 
     # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
