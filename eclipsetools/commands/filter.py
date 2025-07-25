@@ -42,6 +42,18 @@ from eclipsetools.utils.image_writer import save_tiff
     default="unsharp_masked_image.tiff",
     help="Output filename for the filtered image tiff file.",
 )
+@click.option(
+    "--moon-min-radius",
+    type=int,
+    default=200,
+    help="Minimum radius of the moon in pixels for moon detection.",
+)
+@click.option(
+    "--moon-max-radius",
+    type=int,
+    default=2000,
+    help="Maximum radius of the moon in pixels for moon detection.",
+)
 def unsharp_mask_filter(
     input_file: str,
     sigma: float,
@@ -50,6 +62,8 @@ def unsharp_mask_filter(
     filter_amount: float,
     output_file: str,
     mask_path: str,
+    moon_min_radius: int,
+    moon_max_radius: int,
 ):
     """
     Process image using an adaptive unsharp mask filter using partial convolution and a spatially varying convolution
@@ -64,8 +78,7 @@ def unsharp_mask_filter(
     lab_image = skimage.color.rgb2lab(image)
     image_l = lab_image[:, :, 0] / 100.0  # Scale L channel to [0, 1]
 
-    # TODO: Parametrize moon detection parameters
-    moon_params = find_circle(image_l, min_radius=400, max_radius=600)
+    moon_params = find_circle(image_l, moon_min_radius, moon_max_radius)
     if mask_path:
         click.echo(f"Using mask from {mask_path}")
         moon_mask = open_image(mask_path) == 1.0
