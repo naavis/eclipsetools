@@ -22,6 +22,8 @@ def _phase_correlate_with_low_pass(
     img_b: np.ndarray,
     low_pass_sigma: float = None,
 ) -> np.ndarray:
+    assert img_a.shape == img_b.shape
+
     window = hann_window_mask(img_a.shape)
     img_a_win = window * img_a
     img_b_win = window * img_b
@@ -49,7 +51,7 @@ def _phase_correlate_with_low_pass(
 
     phase_correlation = np.fft.ifftshift(phase_correlation)
 
-    initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
+    initial_peak = np.unravel_index(np.argmax(phase_correlation), img_a.shape)
     subpixel_peak = _center_of_mass(
         phase_correlation,
         (int(initial_peak[0]), int(initial_peak[1])),
