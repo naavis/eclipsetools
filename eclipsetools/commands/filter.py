@@ -12,13 +12,13 @@ from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.filtering import get_kernel_size, inpaint_pixels, partial_convolution
 
 
-@click.group()
-def filter():
+@click.group("filter")
+def filter_group():
     """Commands for filtering images."""
     pass
 
 
-@filter.command()
+@filter_group.command()
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option(
     "--sigma",
