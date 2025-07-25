@@ -1,7 +1,9 @@
 from enum import StrEnum
 
 import cv2
+import joblib
 import numpy as np
+from tqdm import tqdm
 
 from eclipsetools.common.circle_finder import DetectedCircle, find_circle
 from eclipsetools.common.image_reader import open_image
@@ -134,3 +136,41 @@ def _estimate_saturated_radius(
         )
         saturated_radius = np.max(distances)
     return saturated_radius
+
+
+def find_max_mask_inner_radius(
+    images: list[str],
+    inner_multiplier: float,
+    n_jobs: int,
+    moon_min_radius: int,
+    moon_max_radius: int,
+    show_progress: bool,
+) -> float:
+    """
+    Find the maximum inner radius in pixels for the moon annulus mask across all images.
+    :param show_progress:
+    :param images: Paths to images
+    :param inner_multiplier: Number to multiply the found moon radius by to get the mask radius in pixels.
+    :param n_jobs: Number of parallel jobs to use for processing.
+    :param moon_min_radius: Minimum moon radius in pixels for moon detection.
+    :param moon_max_radius: Maximum moon radius in pixels for moon detection.
+    :param show_progress: If true, show a progress bar.
+    :return: Biggest mask radius that covers the moon and saturated areas in all images.
+    """
+    jobs = [
+        joblib.delayed(find_mask_inner_radius_px)(
+            image_path, inner_multiplier, moon_min_radius, moon_max_radius
+        )
+        for image_path in images
+    ]
+    parallel = joblib.Parallel(
+        n_jobs=n_jobs, prefer="threads", return_as="generator_unordered"
+    )
+    inner_radii = tqdm(
+        total=len(images),
+        iterable=parallel(jobs),
+        desc="Finding suitable moon mask size",
+        unit="img",
+        disable=not show_progress,
+    )
+    return max(inner_radii)

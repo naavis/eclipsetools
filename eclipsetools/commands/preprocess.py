@@ -8,7 +8,10 @@ from tqdm import tqdm
 
 from eclipsetools.common.image_reader import open_image
 from eclipsetools.common.image_writer import save_tiff
-from eclipsetools.preprocessing.masking import MaskMode, find_mask_inner_radius_px
+from eclipsetools.preprocessing.masking import (
+    MaskMode,
+    find_max_mask_inner_radius,
+)
 from eclipsetools.preprocessing.workflows import (
     preprocess_with_auto_mask,
     preprocess_with_fixed_mask,
@@ -87,12 +90,13 @@ def preprocess_only(
 
     max_mask_inner_radius_px = None
     if mask_mode == "max":
-        max_mask_inner_radius_px = _find_max_mask_inner_radius(
+        max_mask_inner_radius_px = find_max_mask_inner_radius(
             images_to_preprocess,
             mask_inner_radius,
             n_jobs,
             moon_min_radius,
             moon_max_radius,
+            True,
         )
 
     list(
@@ -116,43 +120,6 @@ def preprocess_only(
             ),
         )
     )
-
-
-# TODO: This is duplicated in commands/align.py. Refactor to avoid duplication.
-def _find_max_mask_inner_radius(
-    images: list[str],
-    inner_multiplier: float,
-    n_jobs: int,
-    moon_min_radius: int,
-    moon_max_radius: int,
-) -> float:
-    """
-    Find the maximum inner radius in pixels for the moon mask across all images.
-    :param images: Paths to images
-    :param inner_multiplier: Number to multiply the found moon radius by to get the mask radius in pixels.
-    :param n_jobs: Number of parallel jobs to use for processing.
-    :param moon_min_radius: Minimum moon radius in pixels for moon detection.
-    :param moon_max_radius: Maximum moon radius in pixels for moon detection.
-    :return: Biggest mask radius that covers the moon and saturated areas in all images.
-    """
-    jobs = [
-        joblib.delayed(find_mask_inner_radius_px)(
-            image_path, inner_multiplier, moon_min_radius, moon_max_radius
-        )
-        for image_path in images
-    ]
-    parallel = Parallel(
-        n_jobs=n_jobs, prefer="threads", return_as="generator_unordered"
-    )
-    inner_radii = list(
-        tqdm(
-            total=len(images),
-            iterable=parallel(jobs),
-            desc="Finding suitable moon mask size",
-            unit="img",
-        )
-    )
-    return np.max(inner_radii)
 
 
 def _open_and_preprocess(
