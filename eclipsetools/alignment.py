@@ -4,6 +4,7 @@ import numpy as np
 from eclipsetools.preprocessing.masking import hann_window_mask
 
 
+# TODO: Change low pass sigma parameter units so they better match Druckmüller's and Druckmüllerova's papers
 def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     """
     Find the translation between two images using phase correlation.
