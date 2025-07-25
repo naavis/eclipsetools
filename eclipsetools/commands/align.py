@@ -200,10 +200,10 @@ def _align_single_image(
     :param moon_max_radius: Maximum moon radius in pixels for moon detection.
     :return: Tuple of image path, scale, rotation in degrees, and translation vector (dy, dx)
     """
-    raw_image = open_image(image_path)
+    rgb_image = open_image(image_path)
     if mask_inner_radius_px is None:
         image_to_align = preprocess_with_auto_mask(
-            raw_image,
+            rgb_image,
             mask_inner_radius,
             mask_outer_radius,
             crop,
@@ -212,7 +212,7 @@ def _align_single_image(
         )
     else:
         image_to_align = preprocess_with_fixed_mask(
-            raw_image,
+            rgb_image,
             mask_inner_radius_px,
             mask_outer_radius,
             crop,
@@ -226,7 +226,7 @@ def _align_single_image(
     rotation_scale_matrix = np.vstack(
         [
             cv2.getRotationMatrix2D(
-                (raw_image.shape[1] / 2, raw_image.shape[0] / 2),
+                (rgb_image.shape[1] / 2, rgb_image.shape[0] / 2),
                 -rotation_degrees,
                 1.0 / scale,
             ),
@@ -240,9 +240,9 @@ def _align_single_image(
 
     transform_matrix = (rotation_scale_matrix @ translation_matrix)[:2, :]
     aligned_image = cv2.warpAffine(
-        raw_image,
+        rgb_image,
         transform_matrix,
-        (raw_image.shape[1], raw_image.shape[0]),
+        (rgb_image.shape[1], rgb_image.shape[0]),
         flags=cv2.INTER_LANCZOS4,
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(0, 0, 0),
