@@ -8,7 +8,15 @@ from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.common.moon_masker import get_precise_moon_mask
 
 
-@click.command()
+@click.group()
+def utils():
+    """
+    Utility commands for image processing.
+    """
+    pass
+
+
+@utils.command()
 @click.argument(
     "image_path", type=click.Path(exists=True, dir_okay=False, readable=True)
 )
@@ -38,7 +46,7 @@ def find_moon(image_path: str, min_radius: int, max_radius: int, plot_circle: bo
         plt.show()
 
 
-@click.command()
+@utils.command()
 @click.argument("image_path", type=click.Path(exists=True, dir_okay=False))
 @click.argument("output_file", type=click.Path(dir_okay=False))
 @click.option(
@@ -57,8 +65,8 @@ def create_moon_mask(
     image_path: str, output_file: str, min_moon_radius: int, max_moon_radius: int
 ):
     """
-    Create a precise moon mask from an image, with the sky as 1.0 and the moon as 0.0.
-    This should only be used with linear images.
+    Create a precise moon mask from an image. The sky will have the value 1.0 and the moon  0.0.
+    This command should only be used with linear images.
     """
     image = open_image(image_path)
 
@@ -68,13 +76,14 @@ def create_moon_mask(
     save_tiff(moon_mask, output_file)
 
 
-@click.command()
+@utils.command()
 @click.argument("input_file", type=click.Path(exists=True))
 @click.argument("amount", type=float, default=1.0)
 @click.argument("output_file", type=click.Path())
 def log_stretch(input_file: str, amount: float, output_file: str):
     """
-    Apply logarithmic stretch to an image, defined by log(amount * image + 1).
+    Apply logarithmic stretch to an image.
+    The stretch defined by log(amount * image + 1) / log(amount + 1).
     """
     image = open_image(input_file)
     stretched_image = np.log1p(amount * image) / np.log1p(amount)

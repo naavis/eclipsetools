@@ -66,8 +66,8 @@ def unsharp_mask_filter(
     moon_max_radius: int,
 ):
     """
-    Process image using an adaptive unsharp mask filter using partial convolution and a spatially varying convolution
-    kernel.
+    Process image with an adaptive unsharp mask filter.
+    The filter uses partial convolution and a spatially varying convolution kernel.
     """
 
     validate_sigma_parameters(sigma, sigma_tangent, sigma_radial)

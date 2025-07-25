@@ -14,7 +14,16 @@ from eclipsetools.stacking.sorting import sort_images_by_brightness
 from eclipsetools.stacking.weighting import weight_function_hat
 
 
-@click.command()
+@click.group()
+def stack():
+    """
+    Image stacking commands for eclipse images.
+    :return:
+    """
+    pass
+
+
+@stack.command()
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(
     "--output-file",
@@ -22,7 +31,7 @@ from eclipsetools.stacking.weighting import weight_function_hat
     default="average_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
-def average_stack(images_to_stack: list[str], output_file: str):
+def average(images_to_stack: list[str], output_file: str):
     """
     Stack multiple images by averaging them together. This is useful for images taken with the same exposure time.
     """
@@ -43,7 +52,7 @@ def average_stack(images_to_stack: list[str], output_file: str):
     save_tiff(stacked_image, output_file)
 
 
-@click.command()
+@stack.command()
 @click.argument("reference_image", type=click.Path(exists=True, dir_okay=False))
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(
@@ -77,7 +86,7 @@ def average_stack(images_to_stack: list[str], output_file: str):
     default=2000,
     help="Maximum radius of the moon in pixels for circle detection.",
 )
-def hdr_stack(
+def hdr(
     reference_image: str,
     images_to_stack: list[str],
     fit_intercept: bool,
