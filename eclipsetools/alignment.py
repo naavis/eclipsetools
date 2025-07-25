@@ -47,6 +47,8 @@ def _phase_correlate_with_low_pass(
     else:
         phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
 
+    phase_correlation = np.fft.ifftshift(phase_correlation)
+
     initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
     subpixel_peak = _center_of_mass(
         phase_correlation,
@@ -54,14 +56,7 @@ def _phase_correlate_with_low_pass(
         5,
     )
 
-    # Upper half of each axis represents negative translations
-    thresholds = np.array(phase_correlation.shape[:2]) // 2
-    subtractions = np.array(phase_correlation.shape[:2])
-    subpixel_peak = np.where(
-        subpixel_peak > thresholds, subpixel_peak - subtractions, subpixel_peak
-    )
-
-    return -subpixel_peak
+    return -(subpixel_peak - np.array(img_a.shape) // 2)
 
 
 def find_transform(
