@@ -4,28 +4,29 @@ import numpy as np
 from eclipsetools.utils.circle_finder import find_circle
 
 
-def get_precise_moon_mask(image, min_radius: float, max_radius: float):
+def get_precise_moon_mask(image):
     """
     Create a precise mask of the moon limb in the image using polar coordinates.
     This function finds the moon in the image, transforms the image to polar coordinates,
     estimates the brightness profile of the moon limb, and creates a mask based on the brightness profile.
     :param image: Image in which to find the moon limb.
-    :param min_radius: Lower limit for moon radius (in average moon radii) when refining the mask.
-    :param max_radius: Upper limit for moon radius (in average moon radii) when refining the mask.
     :return: A mask where the moon is represented by 0.0 and the rest of the image by 1.0.
     """
     # TODO: Parametrize the circle finding
     circle = find_circle(image.mean(axis=2), min_radius=400, max_radius=600)
 
+    # Lower and upper limits for the polar transformation radius
+    polar_min_radius = 0.95
+    polar_max_radius = 1.05
     polar_img = cv2.warpPolar(
         image,
         (image.shape[1], image.shape[0]),
         (circle.center[1], circle.center[0]),
-        circle.radius * max_radius,
+        circle.radius * polar_max_radius,
         cv2.WARP_POLAR_LINEAR | cv2.INTER_LANCZOS4,
     )
 
-    start_index = int(min_radius * polar_img.shape[1] / max_radius)
+    start_index = int(polar_min_radius * polar_img.shape[1] / polar_max_radius)
     moon_limb_area = polar_img[:, start_index:]
 
     # Calculate limb brightness profile across +- half_width pixels from edge_index
@@ -56,7 +57,7 @@ def get_precise_moon_mask(image, min_radius: float, max_radius: float):
         polar_mask,
         (image.shape[1], image.shape[0]),
         (circle.center[1], circle.center[0]),
-        circle.radius * max_radius,
+        circle.radius * polar_max_radius,
         cv2.WARP_POLAR_LINEAR | cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
     )
 

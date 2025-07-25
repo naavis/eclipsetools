@@ -48,7 +48,7 @@ def create_moon_mask(image_path: str, output_file: str):
     """
     image = open_image(image_path)
 
-    moon_mask = get_precise_moon_mask(image, 0.95, 1.05)
+    moon_mask = get_precise_moon_mask(image)
 
     click.echo(f"Saving mask to {output_file}")
     save_tiff(moon_mask, output_file)
