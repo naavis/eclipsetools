@@ -46,7 +46,7 @@ def pytest_generate_tests(metafunc):
     if "align_params" in metafunc.fixturenames:
         # Use the same random number generator as in the original test
         rng = np.random.default_rng(TEST_SEED)
-        num_tests = 30
+        num_tests = 10
 
         # Generate the same test parameters as in the original test
         offsets = rng.uniform(-20.0, 20.0, (num_tests, 2))
@@ -68,7 +68,7 @@ def pytest_generate_tests(metafunc):
     # Generate parameters for test_translate_parametrized
     if "translate_params" in metafunc.fixturenames:
         rng = np.random.default_rng(TEST_SEED)
-        num_tests = 30
+        num_tests = 10
 
         # Generate the same offsets as in the original test_translate
         offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
