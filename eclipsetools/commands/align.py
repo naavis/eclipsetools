@@ -153,6 +153,8 @@ def align(
                     max_mask_inner_radius_px,
                     save_preprocessed_post_alignment_images,
                     crop,
+                    moon_min_radius,
+                    moon_max_radius,
                 )
                 for image_path in images_to_align
             ),
