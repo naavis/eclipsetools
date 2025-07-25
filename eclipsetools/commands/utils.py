@@ -2,10 +2,10 @@ import click
 import matplotlib.pyplot as plt
 import numpy as np
 
-from eclipsetools.utils.circle_finder import find_circle
-from eclipsetools.utils.image_reader import open_image
-from eclipsetools.utils.image_writer import save_tiff
-from eclipsetools.utils.moon_masker import get_precise_moon_mask
+from eclipsetools.common.circle_finder import find_circle
+from eclipsetools.common.image_reader import open_image
+from eclipsetools.common.image_writer import save_tiff
+from eclipsetools.common.moon_masker import get_precise_moon_mask
 
 
 @click.command()

@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 from eclipsetools.alignment import find_translation, find_transform
+from eclipsetools.common.image_reader import open_image
 from eclipsetools.preprocessing import workflows
-from eclipsetools.utils.image_reader import open_image
 
 # Generate a fixed test seed to ensure reproducible tests
 TEST_SEED = 122807528840384100672342137672332424406

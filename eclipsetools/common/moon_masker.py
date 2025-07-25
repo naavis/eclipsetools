@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from eclipsetools.utils.circle_finder import find_circle
+from eclipsetools.common.circle_finder import find_circle
 
 
 def get_precise_moon_mask(

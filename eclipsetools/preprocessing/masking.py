@@ -3,8 +3,8 @@ from enum import StrEnum
 import cv2
 import numpy as np
 
-from eclipsetools.utils.circle_finder import DetectedCircle, find_circle
-from eclipsetools.utils.image_reader import open_image
+from eclipsetools.common.circle_finder import DetectedCircle, find_circle
+from eclipsetools.common.image_reader import open_image
 
 
 class MaskMode(StrEnum):

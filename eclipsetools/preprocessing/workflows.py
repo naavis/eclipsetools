@@ -1,6 +1,6 @@
 import numpy as np
 
-import eclipsetools.utils.circle_finder
+import eclipsetools.common.circle_finder
 from eclipsetools.preprocessing import filtering
 from eclipsetools.preprocessing import masking
 from eclipsetools.preprocessing.filtering import radial_high_pass_filter

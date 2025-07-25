@@ -5,8 +5,8 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import lsqr
 from sklearn.linear_model import RANSACRegressor, LinearRegression
 
-from eclipsetools.utils.circle_finder import find_circle, get_binary_moon_mask
-from eclipsetools.utils.image_reader import open_image
+from eclipsetools.common.circle_finder import find_circle, get_binary_moon_mask
+from eclipsetools.common.image_reader import open_image
 
 
 def fit_eclipse_image_pair(

@@ -6,10 +6,10 @@ import numpy as np
 import skimage.color
 from numba_progress import ProgressBar
 
+from eclipsetools.common.circle_finder import find_circle, get_binary_moon_mask
+from eclipsetools.common.image_reader import open_image
+from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.filtering import get_kernel_size, inpaint_pixels, partial_convolution
-from eclipsetools.utils.circle_finder import find_circle, get_binary_moon_mask
-from eclipsetools.utils.image_reader import open_image
-from eclipsetools.utils.image_writer import save_tiff
 
 
 @click.command()

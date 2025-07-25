@@ -2,7 +2,7 @@ import joblib
 import numpy as np
 from tqdm import tqdm
 
-from eclipsetools.utils.image_reader import open_image
+from eclipsetools.common.image_reader import open_image
 
 
 def sort_images_by_brightness(

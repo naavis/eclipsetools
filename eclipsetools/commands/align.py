@@ -12,8 +12,8 @@ from eclipsetools.preprocessing.workflows import (
     preprocess_with_auto_mask,
     preprocess_with_fixed_mask,
 )
-from eclipsetools.utils.image_reader import open_image
-from eclipsetools.utils.image_writer import save_tiff
+from eclipsetools.common.image_reader import open_image
+from eclipsetools.common.image_writer import save_tiff
 
 
 @click.command()
