@@ -31,7 +31,7 @@ def test_translate_parametrized(translate_params):
     # Call the test function directly without joblib parallelization
     error = _find_test_image_translation(
         ref_image,
-        workflows.preprocess_with_auto_mask(ref_image, 1.2, 2.0, 0),
+        workflows.preprocess_with_auto_mask(ref_image, 1.2, 2.0, 0, 400, 600),
         offset,
     )
 
@@ -96,7 +96,9 @@ def _find_test_image_translation(
     test_image = cv2.warpAffine(
         ref_image, translation_matrix, dsize=(ref_image.shape[1], ref_image.shape[0])
     )
-    translated_test_image = workflows.preprocess_with_auto_mask(test_image, 1.2, 2.0, 0)
+    translated_test_image = workflows.preprocess_with_auto_mask(
+        test_image, 1.2, 2.0, 0, 400, 600
+    )
     found_translation = find_translation(
         ref_image_preproc, translated_test_image, low_pass_sigma=0.2
     )
@@ -114,7 +116,12 @@ def _find_transform_error(
     crop_margin = 500
     # Cropping has to be done before preprocessing to avoid artifacts at the edges
     ref_image_preproc = workflows.preprocess_with_auto_mask(
-        ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :], 1.2, 2.0, 0
+        ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :],
+        1.2,
+        2.0,
+        0,
+        400,
+        600,
     )
 
     test_image = _transform_image(ref_image, offset, rotation, scale)
@@ -124,6 +131,8 @@ def _find_transform_error(
         1.2,
         2.0,
         0,
+        400,
+        600,
     )
 
     recovered_scale, recovered_rotation, recovered_translation = find_transform(

@@ -105,11 +105,12 @@ def find_mask_radii_px(
     return mask_inner_radius_px, mask_outer_radius_px
 
 
-def find_mask_inner_radius_px(image_path: str, inner_multiplier: float) -> float:
+def find_mask_inner_radius_px(
+    image_path: str, inner_multiplier: float, moon_min_radius: int, moon_max_radius: int
+) -> float:
     rgb_image = open_image(image_path)
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
-    # TODO: Parametrize the radius range for moon detection
-    moon = find_circle(image, min_radius=400, max_radius=600)
+    moon = find_circle(image, moon_min_radius, moon_max_radius)
     saturated_radius = _estimate_saturated_radius(moon, rgb_image)
     inner_radius_px = inner_multiplier * (
         saturated_radius if saturated_radius else moon.radius
