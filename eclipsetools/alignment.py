@@ -18,7 +18,9 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
 
 
 def _phase_correlate_with_low_pass(
-    img_a: np.ndarray, img_b: np.ndarray, low_pass_sigma: float
+    img_a: np.ndarray,
+    img_b: np.ndarray,
+    low_pass_sigma: float,
 ) -> np.ndarray:
     window = hann_window_mask(img_a.shape)
     img_a_win = window * img_a
@@ -41,7 +43,9 @@ def _phase_correlate_with_low_pass(
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
     subpixel_peak = _center_of_mass(
-        phase_correlation, (int(initial_peak[0]), int(initial_peak[1])), 4
+        phase_correlation,
+        (int(initial_peak[0]), int(initial_peak[1])),
+        5,
     )
 
     # Upper half of each axis represents negative translations
@@ -55,8 +59,11 @@ def _phase_correlate_with_low_pass(
 
 
 def find_transform(
-    ref_image, image, low_pass_sigma, allow_scale: bool = True
-) -> (tuple)[float, float, tuple[float, float]]:
+    ref_image,
+    image,
+    low_pass_sigma,
+    allow_scale: bool = True,
+) -> tuple[float, float, tuple[float, float]]:
     """
     Find the scale, rotation, and translation between two images.
 
@@ -194,7 +201,9 @@ def _gaussian_weights(shape: tuple, sigma: float) -> np.ndarray:
 
 
 def _center_of_mass(
-    image: np.ndarray, center_point: tuple[int, int], window_size: int
+    image: np.ndarray,
+    center_point: tuple[int, int],
+    window_size: int,
 ) -> tuple[float, float]:
     height, width = image.shape
     y0, x0 = center_point
