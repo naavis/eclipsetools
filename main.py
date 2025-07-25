@@ -1,7 +1,7 @@
 import click
 
 from eclipsetools.commands.align import align
-from eclipsetools.commands.filter import unsharp_mask_filter
+from eclipsetools.commands.filter import filter
 from eclipsetools.commands.preprocess import preprocess_only
 from eclipsetools.commands.stack import stack
 from eclipsetools.commands.utils import utils
@@ -14,7 +14,7 @@ def main():
 
 main.add_command(align)  # type: ignore
 main.add_command(preprocess_only)  # type: ignore
-main.add_command(unsharp_mask_filter)  # type: ignore
+main.add_command(filter)  # type: ignore
 main.add_command(stack)  # type: ignore
 main.add_command(utils)  # type: ignore
 

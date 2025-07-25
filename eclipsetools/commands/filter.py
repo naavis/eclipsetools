@@ -12,7 +12,13 @@ from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.filtering import get_kernel_size, inpaint_pixels, partial_convolution
 
 
-@click.command()
+@click.group()
+def filter():
+    """Commands for filtering images."""
+    pass
+
+
+@filter.command()
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option(
     "--sigma",
@@ -54,7 +60,7 @@ from eclipsetools.filtering import get_kernel_size, inpaint_pixels, partial_conv
     default=2000,
     help="Maximum radius of the moon in pixels for moon detection.",
 )
-def unsharp_mask_filter(
+def unsharp_mask(
     input_file: str,
     sigma: float,
     sigma_tangent: float,
