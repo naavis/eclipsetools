@@ -20,7 +20,7 @@ def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
 def _phase_correlate_with_low_pass(
     img_a: np.ndarray,
     img_b: np.ndarray,
-    low_pass_sigma: float,
+    low_pass_sigma: float = None,
 ) -> np.ndarray:
     window = hann_window_mask(img_a.shape)
     img_a_win = window * img_a
@@ -37,9 +37,15 @@ def _phase_correlate_with_low_pass(
         fft1 * np.conjugate(fft2) / ((np.abs(fft1) + offset) * (np.abs(fft2) + offset))
     )
 
-    gaussian_weighting = _gaussian_weights(cross_power_spectrum.shape, low_pass_sigma)
-
-    phase_correlation = np.abs(np.fft.ifft2(gaussian_weighting * cross_power_spectrum))
+    if low_pass_sigma:
+        gaussian_weighting = _gaussian_weights(
+            cross_power_spectrum.shape, low_pass_sigma
+        )
+        phase_correlation = np.abs(
+            np.fft.ifft2(gaussian_weighting * cross_power_spectrum)
+        )
+    else:
+        phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), img_b.shape)
     subpixel_peak = _center_of_mass(
@@ -93,14 +99,16 @@ def find_transform(
     image_fft_log_polar = _log_polar_fft(image_pad, radius)[: shape[0] // 2, :]
 
     # Find shifts in the log-polar FFTs using phase correlation
-    shift_y, shift_x = _simple_phase_correlation(ref_fft_log_polar, image_fft_log_polar)
+    shift_y, shift_x = _phase_correlate_with_low_pass(
+        ref_fft_log_polar, image_fft_log_polar
+    )
 
     # Recover rotation from the correlation result
-    rotation_degrees = 360.0 * shift_y / ref_fft_log_polar.shape[0]
+    rotation_degrees = -360.0 * shift_y / ref_fft_log_polar.shape[0]
 
     # Recover scale from the correlation result
     k_log = radius / np.log(radius)
-    scale = np.exp(shift_x / k_log) if allow_scale else 1.0
+    scale = np.exp(-shift_x / k_log) if allow_scale else 1.0
 
     # Step 2: Apply scale and rotation to the image
     rotate_scale_matrix = cv2.getRotationMatrix2D(
@@ -139,41 +147,6 @@ def _pad_with_zeros(image: np.ndarray) -> np.ndarray:
     x_offset = (longer_side - w) // 2
     padded[y_offset : y_offset + h, x_offset : x_offset + w] = image
     return padded
-
-
-def _simple_phase_correlation(img_a, img_b):
-    assert img_a.shape == img_b.shape, "Reference and image must have the same shape."
-
-    window = hann_window_mask(img_a.shape)
-    img_a_win = window * img_a
-    img_b_win = window * img_b
-
-    img_a_norm = (img_a_win - img_a_win.mean()) / img_a_win.std()
-    img_b_norm = (img_b_win - img_b_win.mean()) / img_b_win.std()
-
-    fft1 = np.fft.fft2(img_a_norm)
-    fft2 = np.fft.fft2(img_b_norm)
-
-    offset = 0.01 * np.max(np.abs(fft1))
-    cross_power_spectrum = (fft1 * np.conj(fft2)) / (
-        np.abs(fft1 + offset) * np.abs(fft2 + offset)
-    )
-    phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
-
-    shift_y, shift_x = np.unravel_index(
-        np.argmax(phase_correlation), phase_correlation.shape
-    )
-
-    # TODO: Add subpixel alignment
-
-    # Shifts peak coordinates to wrap around
-    if shift_y > phase_correlation.shape[0] // 2:
-        shift_y -= phase_correlation.shape[0]
-
-    if shift_x > phase_correlation.shape[1] // 2:
-        shift_x -= phase_correlation.shape[1]
-
-    return float(shift_y), float(shift_x)
 
 
 def _log_polar_fft(image: np.ndarray, radius: float) -> np.ndarray:
