@@ -66,13 +66,13 @@ def average_stack(images_to_stack: list[str], output_file: str):
     help="Output filename for the stacked image tiff file.",
 )
 @click.option(
-    "--min-moon-radius",
+    "--moon-min-radius",
     type=int,
     default=400,
     help="Minimum radius of the moon in pixels for circle detection.",
 )
 @click.option(
-    "--max-moon-radius",
+    "--moon-max-radius",
     type=int,
     default=2000,
     help="Maximum radius of the moon in pixels for circle detection.",
@@ -83,8 +83,8 @@ def hdr_stack(
     fit_intercept: bool,
     n_jobs: int,
     output_file: str,
-    min_moon_radius: int,
-    max_moon_radius: int,
+    moon_min_radius: int,
+    moon_max_radius: int,
 ):
     """
     Stack multiple images to HDR stack. Images must be pre-aligned. Images taken with different exposure times
@@ -131,7 +131,7 @@ def hdr_stack(
     ref_image_data = open_image(reference_image)
 
     ref_moon_params = find_circle(
-        ref_image_data[:, :, 1], min_moon_radius, max_moon_radius
+        ref_image_data[:, :, 1], moon_min_radius, moon_max_radius
     )
     # We use a smaller mask for the reference image to have a cleaner moon edge in the final stack
     ref_moon_weighting_mask_size = 1.005
@@ -156,8 +156,8 @@ def hdr_stack(
                 ref_moon_mask,
                 weighting_mask_size,
                 ref_moon_params.radius,
-                min_moon_radius,
-                max_moon_radius,
+                moon_min_radius,
+                moon_max_radius,
             )
             for image_path in linear_fits.keys()
         ),
