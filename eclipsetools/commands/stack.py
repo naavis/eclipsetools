@@ -65,12 +65,26 @@ def average_stack(images_to_stack: list[str], output_file: str):
     default="hdr_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
+@click.option(
+    "--min-moon-radius",
+    type=int,
+    default=400,
+    help="Minimum radius of the moon in pixels for circle detection.",
+)
+@click.option(
+    "--max-moon-radius",
+    type=int,
+    default=2000,
+    help="Maximum radius of the moon in pixels for circle detection.",
+)
 def hdr_stack(
     reference_image: str,
     images_to_stack: list[str],
     fit_intercept: bool,
     n_jobs: int,
     output_file: str,
+    min_moon_radius: int,
+    max_moon_radius: int,
 ):
     """
     Stack multiple images to HDR stack. Images must be pre-aligned. Images taken with different exposure times
@@ -116,9 +130,8 @@ def hdr_stack(
 
     ref_image_data = open_image(reference_image)
 
-    # TODO: Parametrize moon size
     ref_moon_params = find_circle(
-        ref_image_data[:, :, 1], min_radius=400, max_radius=600
+        ref_image_data[:, :, 1], min_moon_radius, max_moon_radius
     )
     # We use a smaller mask for the reference image to have a cleaner moon edge in the final stack
     ref_moon_weighting_mask_size = 1.005
@@ -143,6 +156,8 @@ def hdr_stack(
                 ref_moon_mask,
                 weighting_mask_size,
                 ref_moon_params.radius,
+                min_moon_radius,
+                max_moon_radius,
             )
             for image_path in linear_fits.keys()
         ),
@@ -190,11 +205,12 @@ def _process_image_for_stacking(
     ref_moon_mask: np.ndarray,
     mask_size: float,
     ref_moon_size_px: float,
+    min_moon_radius: int,
+    max_moon_radius: int,
 ):
     linear_coef, linear_intercept = linear_fit_params
     image = open_image(image_path)
-    # TODO: Parametrize moon size
-    moon_params = find_circle(image[:, :, 1], min_radius=400, max_radius=600)
+    moon_params = find_circle(image[:, :, 1], min_moon_radius, max_moon_radius)
     # The moon radius can be underestimated in very saturated images, so we use the reference moon size
     moon_params.radius = ref_moon_size_px
 
