@@ -73,7 +73,8 @@ def preprocess_only(
 ):
     """
     Preprocess images for alignment. This is useful for testing and troubleshooting preprocessing settings without
-    doing actual alignment. The output will be 32-bit grayscale TIFF images, with both negative and positive values.
+    doing actual alignment. The output will be 32-bit grayscale TIFF images, with a mean of 0.5 and a standard deviation of 1.0,
+    which can be viewed in an external program like Adobe Photoshop.
     """
 
     click.echo(f"Preprocessing {len(images_to_preprocess)} images...")
