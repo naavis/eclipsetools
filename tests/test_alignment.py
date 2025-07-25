@@ -14,11 +14,8 @@ def test_align_parametrized(align_params):
     ref_image = open_image(r"tests\images\eclipse_5ms.CR3")
     offset, rotation, scale = align_params
 
-    # No noise for this test, same as in the original test
-    noise_image = np.zeros_like(ref_image, dtype=np.float32)
-
     # Call the test function directly without joblib parallelization
-    error = _find_transform_error(ref_image, offset, rotation, scale, noise_image)
+    error = _find_transform_error(ref_image, offset, rotation, scale)
 
     scale_error, rotation_error, translation_error = error
     assert scale_error < 0.02, f"Scale error too high: {scale_error}"
@@ -31,15 +28,11 @@ def test_translate_parametrized(translate_params):
     ref_image = open_image(r"tests\images\eclipse_5ms.CR3")
     offset = translate_params
 
-    # No noise for this test, same as in the original test
-    noise_image = np.zeros_like(ref_image, dtype=np.float32)
-
     # Call the test function directly without joblib parallelization
     error = _find_test_image_translation(
         ref_image,
         workflows.preprocess_with_auto_mask(ref_image, 1.2, 2.0, 0),
         offset,
-        noise_image,
     )
 
     assert (
@@ -95,7 +88,6 @@ def _find_test_image_translation(
     ref_image: np.ndarray,
     ref_image_preproc: np.ndarray,
     offset: np.ndarray,
-    noise_image: np.ndarray,
 ) -> float:
     offset_y, offset_x = offset
     translation_matrix = np.array(
@@ -104,11 +96,7 @@ def _find_test_image_translation(
     test_image = cv2.warpAffine(
         ref_image, translation_matrix, dsize=(ref_image.shape[1], ref_image.shape[0])
     )
-    # We add some Gaussian noise to the translated image to simulate varying noise in real images
-    noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0)
-    translated_test_image = workflows.preprocess_with_auto_mask(
-        noisy_test_image, 1.2, 2.0, 0
-    )
+    translated_test_image = workflows.preprocess_with_auto_mask(test_image, 1.2, 2.0, 0)
     found_translation = find_translation(
         ref_image_preproc, translated_test_image, low_pass_sigma=0.2
     )
@@ -121,7 +109,6 @@ def _find_transform_error(
     offset: np.ndarray,
     rotation: float,
     scale: float,
-    noise_image: np.ndarray,
 ) -> tuple[float, float, float]:
     # We crop images to avoid artifacts at the edges that can occur due to the affine transformation
     crop_margin = 500
@@ -131,10 +118,9 @@ def _find_transform_error(
     )
 
     test_image = _transform_image(ref_image, offset, rotation, scale)
-    noisy_test_image = np.clip(test_image + noise_image, 0.0, 1.0, dtype=np.float32)
 
     preproc_image = workflows.preprocess_with_auto_mask(
-        noisy_test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :],
+        test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :],
         1.2,
         2.0,
         0,
