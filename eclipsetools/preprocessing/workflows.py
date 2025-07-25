@@ -16,7 +16,7 @@ def preprocess_with_auto_mask(
     moon_max_radius: int,
 ) -> np.ndarray:
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
-    moon = eclipsetools.utils.circle_finder.find_circle(
+    moon = eclipsetools.common.circle_finder.find_circle(
         image, moon_min_radius, moon_max_radius
     )
     assert (
@@ -49,7 +49,7 @@ def preprocess_with_fixed_mask(
     moon_max_radius: int,
 ) -> np.ndarray:
     image = np.mean(rgb_image, axis=2, dtype=np.float32)
-    moon = eclipsetools.utils.circle_finder.find_circle(
+    moon = eclipsetools.common.circle_finder.find_circle(
         image, moon_min_radius, moon_max_radius
     )
     assert (
