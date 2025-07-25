@@ -98,6 +98,14 @@ def align(
     Align multiple eclipse images to reference image.
     """
 
+    click.echo(f"Processing {len(images_to_align)} images...")
+
+    output_dir_abs = os.path.abspath(output_dir)
+    click.echo(f"Writing aligned images to directory: {output_dir_abs}")
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir_abs, exist_ok=True)
+
     max_mask_inner_radius_px = None
     if mask_mode == "max":
         images_for_masking = [reference_image] + list(images_to_align)
@@ -126,14 +134,6 @@ def align(
             moon_min_radius,
             moon_max_radius,
         )
-
-    click.echo(f"Processing {len(images_to_align)} images...")
-
-    output_dir_abs = os.path.abspath(output_dir)
-    click.echo(f"Writing aligned images to directory: {output_dir_abs}")
-
-    # Ensure the output directory exists
-    os.makedirs(output_dir_abs, exist_ok=True)
 
     # Process all images in parallel using joblib
     results = list(
