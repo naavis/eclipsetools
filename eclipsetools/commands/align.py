@@ -69,13 +69,13 @@ from eclipsetools.utils.image_writer import save_tiff
     "caused by stacking several images and using the stack as a reference image.",
 )
 @click.option(
-    "--min-moon-radius",
+    "--moon-min-radius",
     default=400,
     type=int,
     help="Minimum moon radius in pixels for moon detection.",
 )
 @click.option(
-    "--max-moon-radius",
+    "--moon-max-radius",
     default=2000,
     type=int,
     help="Maximum moon radius in pixels for moon detection.",
