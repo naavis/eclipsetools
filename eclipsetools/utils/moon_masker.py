@@ -4,16 +4,19 @@ import numpy as np
 from eclipsetools.utils.circle_finder import find_circle
 
 
-def get_precise_moon_mask(image):
+def get_precise_moon_mask(
+    image: np.ndarray, min_moon_radius: int, max_moon_radius: int
+):
     """
     Create a precise mask of the moon limb in the image using polar coordinates.
     This function finds the moon in the image, transforms the image to polar coordinates,
     estimates the brightness profile of the moon limb, and creates a mask based on the brightness profile.
+    :param min_moon_radius: Minimum radius of the moon in pixels for moon detection.
+    :param max_moon_radius: Maximum radius of the moon in pixels for moon detection.
     :param image: Image in which to find the moon limb.
     :return: A mask where the moon is represented by 0.0 and the rest of the image by 1.0.
     """
-    # TODO: Parametrize the circle finding
-    circle = find_circle(image.mean(axis=2), min_radius=400, max_radius=600)
+    circle = find_circle(image.mean(axis=2), min_moon_radius, max_moon_radius)
 
     # Lower and upper limits for the polar transformation radius
     polar_min_radius = 0.95
