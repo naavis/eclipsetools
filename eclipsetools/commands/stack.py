@@ -77,7 +77,7 @@ def average(images_to_stack: list[str], output_file: str):
 @click.option(
     "--moon-min-radius",
     type=int,
-    default=400,
+    default=200,
     help="Minimum radius of the moon in pixels for circle detection.",
 )
 @click.option(

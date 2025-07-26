@@ -70,7 +70,7 @@ from eclipsetools.preprocessing.workflows import (
 )
 @click.option(
     "--moon-min-radius",
-    default=400,
+    default=200,
     type=int,
     help="Minimum moon radius in pixels for moon detection.",
 )
