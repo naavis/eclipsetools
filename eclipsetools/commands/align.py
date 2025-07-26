@@ -219,26 +219,17 @@ def _align_single_image(
             moon_min_radius,
             moon_max_radius,
         )
+    # TODO: Parametrize scale difference allowance
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
         reference_image, image_to_align, low_pass_sigma, allow_scale=False
     )
 
-    rotation_scale_matrix = np.vstack(
-        [
-            cv2.getRotationMatrix2D(
-                (rgb_image.shape[1] / 2, rgb_image.shape[0] / 2),
-                -rotation_degrees,
-                1.0 / scale,
-            ),
-            [0.0, 0.0, 1.0],
-        ],
-        dtype=np.float32,
+    transform_matrix = get_transform_matrix(
+        1.0 / scale,
+        -rotation_degrees,
+        (rgb_image.shape[0] / 2, rgb_image.shape[1] / 2),
+        (-translation_y, -translation_x),
     )
-    translation_matrix = np.array(
-        [[1, 0, -translation_x], [0, 1, -translation_y], [0, 0, 1]], dtype=np.float32
-    )
-
-    transform_matrix = (rotation_scale_matrix @ translation_matrix)[:2, :]
     aligned_image = cv2.warpAffine(
         rgb_image,
         transform_matrix,
@@ -285,3 +276,37 @@ def _align_single_image(
         float(rotation_degrees),
         (float(translation_y), float(translation_x)),
     )
+
+
+def get_transform_matrix(
+    scale: float,
+    rotation_degrees: float,
+    rotation_center: tuple[float, float],
+    translation: tuple[float, float],
+) -> np.ndarray:
+    """
+    Get the transformation matrix for the given scale, rotation, and translation.
+    The transformation first scales and rotates the image around the specified center, and then translates it.
+    :param scale: Scale factor
+    :param rotation_degrees: Rotation in degrees
+    :param rotation_center: Center of rotation (cy, cx)
+    :param translation: Translation vector (ty, tx)
+    :return: 2x3 transformation matrix
+    """
+    rotation_scale_matrix = np.vstack(
+        [
+            cv2.getRotationMatrix2D(
+                rotation_center,
+                rotation_degrees,
+                scale,
+            ),
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float32,
+    )
+    translation_matrix = np.array(
+        [[1, 0, translation[1]], [0, 1, translation[0]], [0, 0, 1]], dtype=np.float32
+    )
+
+    transform_matrix = (rotation_scale_matrix @ translation_matrix)[:2, :]
+    return transform_matrix
