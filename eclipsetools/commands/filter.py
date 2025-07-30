@@ -107,13 +107,20 @@ def unsharp_mask(
             image_l, pixels_to_infill, moon_mask, kernel_size, progress_proxy
         )
 
-    convolved_image = partial_convolution(
-        inpainted_image,
-        np.ones_like(moon_mask),
-        sigma_tangent,
-        sigma_radial,
-        moon_params.center,
-    )
+    if sigma_radial == sigma_tangent:
+        convolved_image = cv2.GaussianBlur(
+            inpainted_image,
+            (kernel_size, kernel_size),
+            sigma_tangent,
+        )
+    else:
+        convolved_image = partial_convolution(
+            inpainted_image,
+            np.ones_like(moon_mask),
+            sigma_tangent,
+            sigma_radial,
+            moon_params.center,
+        )
     convolved_image = np.where(moon_mask, convolved_image, image_l)
 
     filtered_image = np.clip(
