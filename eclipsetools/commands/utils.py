@@ -100,20 +100,30 @@ def color_calibrate(input_file: str, output_file: str):
     """
     Color calibrate image.
     The calibration is done by assuming the image is a linear image, and the background and solar corona are neutral.
+    The background value is subtracted from the image, and the color channels are divided by suitable ratios to make
+    the solar corona neutral while keeping the background neutral as well.
     """
     image = open_image(input_file)
     assert image.ndim == 3, "Image must be a 3D array (height, width, channels)."
 
     small_image = image[::10, ::10, :]  # Downsample for performance
 
+    valid_pixels = (
+        (small_image[:, :, 0] > 0.0)
+        & (small_image[:, :, 0] < 1.0)
+        & (small_image[:, :, 1] > 0.0)
+        & (small_image[:, :, 1] < 1.0)
+        & (small_image[:, :, 2] > 0.0)
+        & (small_image[:, :, 2] < 1.0)
+    )
     red = small_image[:, :, 0]
-    red = red[(red > 0.0) & (red < 1.0)]
+    red = red[valid_pixels]
 
     green = small_image[:, :, 1]
-    green = green[(green > 0.0) & (green < 1.0)]
+    green = green[valid_pixels]
 
     blue = small_image[:, :, 2]
-    blue = blue[(blue > 0.0) & (blue < 1.0)]
+    blue = blue[valid_pixels]
 
     r_bg = np.percentile(red, 1)
     g_bg = np.percentile(green, 1)
@@ -126,15 +136,19 @@ def color_calibrate(input_file: str, output_file: str):
     rg_ratio = (r_fg - r_bg) / (g_fg - g_bg)
     bg_ratio = (b_fg - b_bg) / (g_fg - g_bg)
 
-    # Ensure all ratios are above 1.0 to avoid non-white saturated pixels
+    # Ensure all ratios are below 1.0 to avoid non-white saturated pixels
     ratios = np.array([rg_ratio, 1.0, bg_ratio])
-    ratios /= ratios.min()
+    ratios /= ratios.max()
+
+    click.echo(f"Background RGB: ({r_bg:.4f}, {g_bg:.4f}, {b_bg:.4f})")
+    click.echo(f"White balance ratios: {ratios}")
 
     # Subtract the background and divide by the ratios
     image_cc = (image - np.array([r_bg, g_bg, b_bg])) / ratios
 
-    # Ensure no negative values
-    image_cc -= min(image_cc.min(), 0.0)
+    # Ensure no negative values, and don't clip more pixels than necessary
+    min_value = min(image_cc.min(), 0.0)
+    image_cc = (image_cc - min_value) / (1.0 - min_value)
     image_cc = np.clip(image_cc, 0.0, 1.0)
 
     click.echo(f"Saving color-calibrated image to {output_file}")
