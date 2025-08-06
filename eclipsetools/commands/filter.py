@@ -117,6 +117,105 @@ def unsharp_mask(
     save_tiff(processed_rgb, output_file, embed_srgb=True)
 
 
+@filter_group.command()
+@click.argument("input_file", type=click.Path(exists=True))
+@click.option(
+    "--filter-params",
+    "-f",
+    type=(float, float),
+    multiple=True,
+    help='Convolution kernel sigma and filter amount pairs, e.g. "1.0 100.0"',
+)
+@click.option("--mask-path", type=click.Path(exists=True), help="Path to mask image.")
+@click.option(
+    "--output-file",
+    type=click.Path(),
+    default="achf_image.tiff",
+    help="Output filename for the filtered image tiff file.",
+)
+@click.option(
+    "--moon-min-radius",
+    type=int,
+    default=200,
+    help="Minimum radius of the moon in pixels for moon detection.",
+)
+@click.option(
+    "--moon-max-radius",
+    type=int,
+    default=2000,
+    help="Maximum radius of the moon in pixels for moon detection.",
+)
+def achf(
+    input_file: str,
+    filter_params: tuple[tuple[float, float], ...] | None,
+    output_file: str,
+    mask_path: str,
+    moon_min_radius: int,
+    moon_max_radius: int,
+):
+    """
+    Apply the Adaptive Circular High-Frequency filter (ACHF) to the image.
+    The filter combines several unsharp masks with different parameters to enhance the image,
+    using partial convolution to avoid ringing artifacts around the moon.
+    """
+    if not filter_params:
+        filter_params = [
+            (1.0, 100.0),
+            (2.0, 80.0),
+            (4.0, 60.0),
+            (8.0, 30.0),
+            (16.0, 10.0),
+        ]
+
+    image = open_image(input_file)
+    lab_image = skimage.color.rgb2lab(image)
+    image_l = lab_image[:, :, 0] / 100.0  # Scale L channel to [0, 1]
+
+    click.echo(
+        f"Finding moon in the image with radius range {moon_min_radius} to {moon_max_radius} px"
+    )
+    moon_params = find_circle(image_l, moon_min_radius, moon_max_radius)
+    click.echo(
+        f"Moon center x = {moon_params.center[1]:.2f}, y = {moon_params.center[0]:.2f}, radius: {moon_params.radius:.2f}"
+    )
+    if mask_path:
+        click.echo(f"Using mask from {mask_path}")
+        moon_mask = open_image(mask_path) == 1.0
+    else:
+        click.echo("Finding moon in the image")
+        moon_mask = get_binary_moon_mask(image_l.shape, moon_params, 1.005)
+
+    filtered_image = image_l.copy()
+
+    for filter_radius, filter_amount in filter_params:
+        click.echo(
+            f"Applying filter with radius {filter_radius} and amount {filter_amount}"
+        )
+        filtered_image += filter_amount * (
+            image_l
+            - convolve_with_infill(
+                image_l, moon_mask, moon_params, filter_radius, filter_radius
+            )
+        )
+
+    # Not all CIELAB value combinations are valid, and the conversion to RGB complains, but we ignore that.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Conversion from CIE-LAB")
+        processed_rgb = skimage.color.lab2rgb(
+            np.stack(
+                [
+                    np.clip(filtered_image, 0.0, 1.0) * 100,
+                    lab_image[:, :, 1],
+                    lab_image[:, :, 2],
+                ],
+                axis=-1,
+            )
+        )
+
+    click.echo(f"Saving filtered image to {output_file}")
+    save_tiff(processed_rgb, output_file, embed_srgb=True)
+
+
 def convolve_with_infill(
     image: np.ndarray,
     mask: np.ndarray,
