@@ -78,9 +78,9 @@ def create_moon_mask(
 
 @utils.command()
 @click.argument("input_file", type=click.Path(exists=True))
-@click.argument("amount", type=float, default=1.0)
 @click.argument("output_file", type=click.Path())
-def log_stretch(input_file: str, amount: float, output_file: str):
+@click.argument("amount", type=float, default=1.0)
+def log_stretch(input_file: str, output_file: str, amount: float):
     """
     Apply logarithmic stretch to an image.
     The stretch defined by log(amount * image + 1) / log(amount + 1).

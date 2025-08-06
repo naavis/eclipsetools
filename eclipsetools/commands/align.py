@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from eclipsetools.alignment import find_transform
+from eclipsetools.common.circle_finder import find_circle, DetectedCircle
 from eclipsetools.common.image_reader import open_image
 from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.preprocessing.masking import MaskMode, find_max_mask_inner_radius
@@ -16,7 +17,15 @@ from eclipsetools.preprocessing.workflows import (
 )
 
 
-@click.command()
+@click.group()
+def align():
+    """
+    Commands for aligning eclipse images.
+    """
+    pass
+
+
+@align.command("corona")
 @click.argument("reference_image", type=click.Path(exists=True))
 @click.argument("images_to_align", nargs=-1, required=True)
 @click.option(
@@ -80,7 +89,7 @@ from eclipsetools.preprocessing.workflows import (
     type=int,
     help="Maximum moon radius in pixels for moon detection.",
 )
-def align(
+def align_by_corona(
     reference_image: str,
     images_to_align: list[str],
     output_dir: str,
@@ -95,7 +104,7 @@ def align(
     crop: int,
 ):
     """
-    Align multiple eclipse images to reference image.
+    Align images based on coronal details.
     """
 
     click.echo(f"Processing {len(images_to_align)} images...")
@@ -144,7 +153,7 @@ def align(
             iterable=joblib.Parallel(
                 n_jobs=n_jobs, prefer="threads", return_as="generator_unordered"
             )(
-                joblib.delayed(_align_single_image)(
+                joblib.delayed(_align_single_image_by_corona)(
                     ref_image,
                     image_path,
                     low_pass_sigma,
@@ -172,7 +181,7 @@ def align(
         click.echo(f"  Translation: {translation_x:.4f}, {translation_y:.4f}")
 
 
-def _align_single_image(
+def _align_single_image_by_corona(
     reference_image: np.ndarray,
     image_path: str,
     low_pass_sigma: float,
@@ -310,3 +319,116 @@ def _get_transform_matrix(
 
     transform_matrix = (rotation_scale_matrix @ translation_matrix)[:2, :]
     return transform_matrix
+
+
+@align.command("moon")
+@click.argument("reference_image", type=click.Path(exists=True))
+@click.argument("images_to_align", nargs=-1, required=True)
+@click.option(
+    "--moon-min-radius",
+    default=200,
+    type=int,
+    help="Minimum moon radius in pixels for moon detection.",
+)
+@click.option(
+    "--moon-max-radius",
+    default=2000,
+    type=int,
+    help="Maximum moon radius in pixels for moon detection.",
+)
+@click.option(
+    "--output-dir",
+    default="output",
+    type=click.Path(exists=False),
+    help="Directory to save preprocessed images.",
+)
+@click.option(
+    "--n-jobs",
+    default=-1,
+    type=int,
+    help="Number of parallel jobs. Default is -1 (all CPUs).",
+)
+def align_by_moon(
+    reference_image: str,
+    images_to_align: list[str],
+    moon_min_radius: int,
+    moon_max_radius: int,
+    output_dir: str,
+    n_jobs: int,
+):
+    """
+    Align images based on the moon's position.
+    """
+    click.echo(f"Processing {len(images_to_align)} images...")
+
+    output_dir_abs = os.path.abspath(output_dir)
+    click.echo(f"Writing aligned images to directory: {output_dir_abs}")
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir_abs, exist_ok=True)
+
+    ref_moon_params = find_circle(
+        open_image(reference_image)[:, :, 1], moon_min_radius, moon_max_radius
+    )
+
+    _ = list(
+        tqdm(
+            desc="Aligning images",
+            unit="img",
+            total=len(images_to_align),
+            iterable=joblib.Parallel(
+                prefer="threads", return_as="generator_unordered", n_jobs=n_jobs
+            )(
+                joblib.delayed(_align_single_image_by_moon)(
+                    image_path,
+                    ref_moon_params,
+                    output_dir_abs,
+                    moon_min_radius,
+                    moon_max_radius,
+                )
+                for image_path in images_to_align
+            ),
+        )
+    )
+
+
+def _align_single_image_by_moon(
+    image_path: str,
+    ref_moon_params: DetectedCircle,
+    output_dir: str,
+    moon_min_radius: int,
+    moon_max_radius: int,
+):
+
+    image = open_image(image_path)
+    moon_params = find_circle(image[:, :, 1], moon_min_radius, moon_max_radius)
+
+    if moon_params is None:
+        click.echo(f"Moon not found in {image_path}. Skipping alignment.")
+        return
+
+    translation_x = ref_moon_params.center[1] - moon_params.center[1]
+    translation_y = ref_moon_params.center[0] - moon_params.center[0]
+
+    transform_matrix = _get_transform_matrix(
+        1.0,
+        0.0,
+        (0, 0),
+        (translation_y, translation_x),
+    )
+    aligned_image = cv2.warpAffine(
+        image,
+        transform_matrix,
+        (image.shape[1], image.shape[0]),
+        flags=cv2.INTER_LANCZOS4,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(0, 0, 0),
+    )
+    np.clip(aligned_image, 0.0, 1.0, out=aligned_image)
+
+    # Save the aligned image as a TIFF file
+    orig_filename_without_ext = os.path.splitext(os.path.basename(image_path))[0]
+    output_filename = os.path.join(
+        output_dir, f"{orig_filename_without_ext}_aligned.tiff"
+    )
+    save_tiff(aligned_image, output_filename)
