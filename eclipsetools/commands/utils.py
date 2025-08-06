@@ -91,3 +91,51 @@ def log_stretch(input_file: str, output_file: str, amount: float):
 
     click.echo(f"Saving stretched image to {output_file}")
     save_tiff(stretched_image, output_file)
+
+
+@utils_group.command()
+@click.argument("input_file", type=click.Path(exists=True))
+@click.argument("output_file", type=click.Path())
+def color_calibrate(input_file: str, output_file: str):
+    """
+    Color calibrate image.
+    The calibration is done by assuming the image is a linear image, and the background and solar corona are neutral.
+    """
+    image = open_image(input_file)
+    assert image.ndim == 3, "Image must be a 3D array (height, width, channels)."
+
+    small_image = image[::10, ::10, :]  # Downsample for performance
+
+    red = small_image[:, :, 0]
+    red = red[(red > 0.0) & (red < 1.0)]
+
+    green = small_image[:, :, 1]
+    green = green[(green > 0.0) & (green < 1.0)]
+
+    blue = small_image[:, :, 2]
+    blue = blue[(blue > 0.0) & (blue < 1.0)]
+
+    r_bg = np.percentile(red, 1)
+    g_bg = np.percentile(green, 1)
+    b_bg = np.percentile(blue, 1)
+
+    r_fg = np.percentile(red, 99)
+    g_fg = np.percentile(green, 99)
+    b_fg = np.percentile(blue, 99)
+
+    rg_ratio = (r_fg - r_bg) / (g_fg - g_bg)
+    bg_ratio = (b_fg - b_bg) / (g_fg - g_bg)
+
+    # Ensure all ratios are above 1.0 to avoid non-white saturated pixels
+    ratios = np.array([rg_ratio, 1.0, bg_ratio])
+    ratios /= ratios.min()
+
+    # Subtract the background and divide by the ratios
+    image_cc = (image - np.array([r_bg, g_bg, b_bg])) / ratios
+
+    # Ensure no negative values
+    image_cc -= min(image_cc.min(), 0.0)
+    image_cc = np.clip(image_cc, 0.0, 1.0)
+
+    click.echo(f"Saving color-calibrated image to {output_file}")
+    save_tiff(image_cc, output_file)
