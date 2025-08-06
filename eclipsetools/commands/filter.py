@@ -233,17 +233,20 @@ def convolve_with_infill(
     :return: Convolved image with the same shape as the input image.
     """
     kernel_size = get_kernel_size(sigma_tangent, sigma_radial)
+
     dilated_mask = cv2.dilate(
         mask.astype(np.uint8),
         cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size)),
     ).astype(np.bool)
     pixels_to_infill = np.logical_xor(mask, dilated_mask)
+
     with ProgressBar(
         total=image.shape[0], unit="row", desc="Inpainting pixels"
     ) as progress_proxy:
         inpainted_image = inpaint_pixels(
             image, pixels_to_infill, mask, kernel_size, progress_proxy
         )
+
     if sigma_radial == sigma_tangent:
         convolved_image = cv2.GaussianBlur(
             inpainted_image,
@@ -258,6 +261,7 @@ def convolve_with_infill(
             sigma_radial,
             moon_params.center,
         )
+
     convolved_image = np.where(mask, convolved_image, image)
     return convolved_image
 
