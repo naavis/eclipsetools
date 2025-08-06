@@ -14,8 +14,8 @@ from eclipsetools.stacking.sorting import sort_images_by_brightness
 from eclipsetools.stacking.weighting import weight_function_hat
 
 
-@click.group()
-def stack():
+@click.group("stack")
+def stack_group():
     """
     Image stacking commands for eclipse images.
     :return:
@@ -23,7 +23,7 @@ def stack():
     pass
 
 
-@stack.command()
+@stack_group.command()
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(
     "--output-file",
@@ -52,7 +52,7 @@ def average(images_to_stack: list[str], output_file: str):
     save_tiff(stacked_image, output_file)
 
 
-@stack.command()
+@stack_group.command()
 @click.argument("reference_image", type=click.Path(exists=True, dir_okay=False))
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(

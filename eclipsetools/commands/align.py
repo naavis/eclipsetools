@@ -17,15 +17,15 @@ from eclipsetools.preprocessing.workflows import (
 )
 
 
-@click.group()
-def align():
+@click.group("align")
+def align_group():
     """
     Commands for aligning eclipse images.
     """
     pass
 
 
-@align.command("corona")
+@align_group.command("corona")
 @click.argument("reference_image", type=click.Path(exists=True))
 @click.argument("images_to_align", nargs=-1, required=True)
 @click.option(
@@ -321,7 +321,7 @@ def _get_transform_matrix(
     return transform_matrix
 
 
-@align.command("moon")
+@align_group.command("moon")
 @click.argument("reference_image", type=click.Path(exists=True))
 @click.argument("images_to_align", nargs=-1, required=True)
 @click.option(
@@ -434,7 +434,7 @@ def _align_single_image_by_moon(
     save_tiff(aligned_image, output_filename)
 
 
-@align.command()
+@align_group.command()
 @click.argument("images_to_preprocess", nargs=-1, required=True)
 @click.option(
     "--n-jobs",

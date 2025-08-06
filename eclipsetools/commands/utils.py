@@ -8,15 +8,15 @@ from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.common.moon_masker import get_precise_moon_mask
 
 
-@click.group()
-def utils():
+@click.group("utils")
+def utils_group():
     """
     Utility commands for image processing.
     """
     pass
 
 
-@utils.command()
+@utils_group.command()
 @click.argument(
     "image_path", type=click.Path(exists=True, dir_okay=False, readable=True)
 )
@@ -46,7 +46,7 @@ def find_moon(image_path: str, min_radius: int, max_radius: int, plot_circle: bo
         plt.show()
 
 
-@utils.command()
+@utils_group.command()
 @click.argument("image_path", type=click.Path(exists=True, dir_okay=False))
 @click.argument("output_file", type=click.Path(dir_okay=False))
 @click.option(
@@ -76,7 +76,7 @@ def create_moon_mask(
     save_tiff(moon_mask, output_file)
 
 
-@utils.command()
+@utils_group.command()
 @click.argument("input_file", type=click.Path(exists=True))
 @click.argument("output_file", type=click.Path())
 @click.argument("amount", type=float, default=1.0)
