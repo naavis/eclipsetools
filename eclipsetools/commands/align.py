@@ -224,7 +224,7 @@ def _align_single_image(
         reference_image, image_to_align, low_pass_sigma, allow_scale=False
     )
 
-    transform_matrix = get_transform_matrix(
+    transform_matrix = _get_transform_matrix(
         1.0 / scale,
         -rotation_degrees,
         (rgb_image.shape[0] / 2, rgb_image.shape[1] / 2),
@@ -278,7 +278,7 @@ def _align_single_image(
     )
 
 
-def get_transform_matrix(
+def _get_transform_matrix(
     scale: float,
     rotation_degrees: float,
     rotation_center: tuple[float, float],
