@@ -6,7 +6,11 @@ import numpy as np
 import skimage.color
 from numba_progress import ProgressBar
 
-from eclipsetools.common.circle_finder import find_circle, get_binary_moon_mask
+from eclipsetools.common.circle_finder import (
+    find_circle,
+    get_binary_moon_mask,
+    DetectedCircle,
+)
 from eclipsetools.common.image_reader import open_image
 from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.filtering import get_kernel_size, inpaint_pixels, partial_convolution
@@ -92,36 +96,9 @@ def unsharp_mask(
         click.echo("Finding moon in the image")
         moon_mask = get_binary_moon_mask(image_l.shape, moon_params, 1.005)
 
-    kernel_size = get_kernel_size(sigma_tangent, sigma_radial)
-    dilated_mask = cv2.dilate(
-        moon_mask.astype(np.uint8),
-        cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size)),
-    ).astype(np.bool)
-
-    pixels_to_infill = np.logical_xor(moon_mask, dilated_mask)
-
-    with ProgressBar(
-        total=image.shape[0], unit="row", desc="Inpainting pixels"
-    ) as progress_proxy:
-        inpainted_image = inpaint_pixels(
-            image_l, pixels_to_infill, moon_mask, kernel_size, progress_proxy
-        )
-
-    if sigma_radial == sigma_tangent:
-        convolved_image = cv2.GaussianBlur(
-            inpainted_image,
-            (kernel_size, kernel_size),
-            sigma_tangent,
-        )
-    else:
-        convolved_image = partial_convolution(
-            inpainted_image,
-            np.ones_like(moon_mask),
-            sigma_tangent,
-            sigma_radial,
-            moon_params.center,
-        )
-    convolved_image = np.where(moon_mask, convolved_image, image_l)
+    convolved_image = convolve_with_infill(
+        image_l, moon_mask, moon_params, sigma_radial, sigma_tangent
+    )
 
     filtered_image = np.clip(
         image_l + filter_amount * (image_l - convolved_image), 0.0, 1.0
@@ -140,7 +117,61 @@ def unsharp_mask(
     save_tiff(processed_rgb, output_file, embed_srgb=True)
 
 
-def validate_sigma_parameters(sigma, sigma_tangent, sigma_radial):
+def convolve_with_infill(
+    image: np.ndarray,
+    mask: np.ndarray,
+    moon_params: DetectedCircle,
+    sigma_radial: float,
+    sigma_tangent: float,
+) -> np.ndarray:
+    """
+    Convolve the image with a partial convolution kernel, infilling masked pixels to avoid ringing artifacts.
+    :param image: 2D array of the image to be filtered.
+    :param mask: 2D boolean array where True indicates pixels to be convolved.
+    :param moon_params: Parameters of the detected moon circle, used for partial convolution.
+    :param sigma_radial: Sigma for the radial component of the Gaussian convolution kernel.
+    :param sigma_tangent: Sigma for the tangential component of the Gaussian convolution kernel.
+    :return: Convolved image with the same shape as the input image.
+    """
+    kernel_size = get_kernel_size(sigma_tangent, sigma_radial)
+    dilated_mask = cv2.dilate(
+        mask.astype(np.uint8),
+        cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size)),
+    ).astype(np.bool)
+    pixels_to_infill = np.logical_xor(mask, dilated_mask)
+    with ProgressBar(
+        total=image.shape[0], unit="row", desc="Inpainting pixels"
+    ) as progress_proxy:
+        inpainted_image = inpaint_pixels(
+            image, pixels_to_infill, mask, kernel_size, progress_proxy
+        )
+    if sigma_radial == sigma_tangent:
+        convolved_image = cv2.GaussianBlur(
+            inpainted_image,
+            (kernel_size, kernel_size),
+            sigma_tangent,
+        )
+    else:
+        convolved_image = partial_convolution(
+            inpainted_image,
+            np.ones_like(mask),
+            sigma_tangent,
+            sigma_radial,
+            moon_params.center,
+        )
+    convolved_image = np.where(mask, convolved_image, image)
+    return convolved_image
+
+
+def validate_sigma_parameters(
+    sigma: float, sigma_tangent: float, sigma_radial: float
+) -> None:
+    """
+    Validate the sigma parameters for the unsharp mask command.
+    You must provide either a single --sigma value or both --sigma-tangent and --sigma-radial.
+
+    :raises click.BadParameter: If the parameters are not valid.
+    """
     s = sigma is not None
     st = sigma_tangent is not None
     sr = sigma_radial is not None
