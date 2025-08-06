@@ -2,7 +2,6 @@ import click
 
 from eclipsetools.commands.align import align
 from eclipsetools.commands.filter import filter_group
-from eclipsetools.commands.preprocess import preprocess_only
 from eclipsetools.commands.stack import stack
 from eclipsetools.commands.utils import utils
 
@@ -13,7 +12,6 @@ def main():
 
 
 main.add_command(align)  # type: ignore
-main.add_command(preprocess_only)  # type: ignore
 main.add_command(filter_group)  # type: ignore
 main.add_command(stack)  # type: ignore
 main.add_command(utils)  # type: ignore
