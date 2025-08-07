@@ -90,7 +90,7 @@ def log_stretch(input_file: str, output_file: str, amount: float):
     stretched_image = np.clip(stretched_image, 0.0, 1.0)
 
     click.echo(f"Saving stretched image to {output_file}")
-    save_tiff(stretched_image, output_file)
+    save_tiff(stretched_image, output_file, embed_srgb=True)
 
 
 @utils_group.command()
