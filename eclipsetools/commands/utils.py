@@ -1,6 +1,8 @@
 import click
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
+from scipy.ndimage import gaussian_filter1d
 from scipy.stats import binned_statistic
 
 from eclipsetools.common.circle_finder import find_circle
@@ -178,7 +180,7 @@ def foo(input_file: str):
     brightness = image[:, :, 1]
 
     # Define sector parameters
-    num_sectors = 60
+    num_sectors = 30
     sector_size = 360 / num_sectors
     max_distance = moon_params.radius
 
@@ -264,12 +266,58 @@ def foo(input_file: str):
 
     plt.show()
 
-    results_norm = results - np.nanmin(
-        results, axis=1, keepdims=True
-    )  # Normalize each sector
-    results /= np.nanmax(results_norm, axis=1, keepdims=True)  # Scale to [0, 1]
-    average_curve = np.nanmean(results_norm, axis=0)
-    average_curve[np.isnan(average_curve)] = 0.0
+    # Replace nan values in results with the minimum of the same row
+    results = np.nan_to_num(results, nan=np.nanmin(results, axis=1, keepdims=True))
 
-    plt.plot(np.arange(0, len(average_curve)), average_curve)
+    smoothed_data = smooth_polar_data(results, 10)
+    smoothed_data = gaussian_filter1d(smoothed_data, sigma=5, axis=1)
+    smoothed_data -= np.nanmin(smoothed_data)
+
+    sector_angles_rad = np.linspace(
+        np.radians(sector_size / 2.0),
+        2.0 * np.pi - np.radians(sector_size / 2.0),
+        num_sectors,
+        endpoint=True,
+    )
+
+    # Seam angle at 0/360
+    seam_angle = 0.0
+
+    # Seam value = average of first and last sector rows
+    seam_values = 0.5 * (smoothed_data[0, :] + smoothed_data[-1, :])
+
+    # Insert at beginning and end
+    sector_angles_rad = np.concatenate(([seam_angle], sector_angles_rad, [2 * np.pi]))
+    smoothed_data = np.vstack([seam_values, smoothed_data, seam_values])
+
+    interp = RegularGridInterpolator(
+        (
+            sector_angles_rad,
+            distance_centers,
+        ),
+        smoothed_data,
+        bounds_error=False,
+        fill_value=0,
+    )
+    pixel_angles_rad = np.mod(angles, 2 * np.pi)
+    coords = np.stack([pixel_angles_rad.ravel(), distances.ravel()], axis=-1)
+    moon_glare = interp(coords).reshape(image.shape[0], image.shape[1])
+
+    plt.imshow(moon_glare, cmap="gray", vmin=0.0, vmax=0.002)
     plt.show()
+
+    plt.imshow(
+        np.where(distances < moon_params.radius, image[:, :, 1] - moon_glare, 0.0),
+        cmap="gray",
+        vmin=0.001,
+        vmax=0.0015,
+    )
+    plt.title("Difference between original and interpolated image")
+    plt.show()
+
+
+def smooth_polar_data(data, num_frequencies):
+    fft_coeffs = np.fft.rfft(data, axis=0)
+    fft_coeffs[num_frequencies + 1 :, :] = 0
+    smoothed_data = np.fft.irfft(fft_coeffs, axis=0)
+    return smoothed_data
