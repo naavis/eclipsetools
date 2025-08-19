@@ -304,6 +304,14 @@ def foo(input_file: str):
     moon_glare = interp(coords).reshape(image.shape[0], image.shape[1])
 
     plt.imshow(moon_glare, cmap="gray", vmin=0.0, vmax=0.002)
+    plt.xlim(
+        moon_params.center[1] - moon_params.radius,
+        moon_params.center[1] + moon_params.radius,
+    )
+    plt.ylim(
+        moon_params.center[0] + moon_params.radius,
+        moon_params.center[0] - moon_params.radius,
+    )
     plt.show()
 
     plt.imshow(
@@ -311,6 +319,14 @@ def foo(input_file: str):
         cmap="gray",
         vmin=0.001,
         vmax=0.0015,
+    )
+    plt.xlim(
+        moon_params.center[1] - moon_params.radius,
+        moon_params.center[1] + moon_params.radius,
+    )
+    plt.ylim(
+        moon_params.center[0] + moon_params.radius,
+        moon_params.center[0] - moon_params.radius,
     )
     plt.title("Difference between original and interpolated image")
     plt.show()
