@@ -10,7 +10,7 @@ dependencies for the project.
 ```bash
 conda env create -f environment.yml
 conda activate eclipsetools
-python main.py --help
+python -m eclipsetools.cli --help
 ```
 
 ## Usage
@@ -18,11 +18,8 @@ python main.py --help
 Run the main script to see available commands and options:
 
 ```bash
-python main.py --help
+python -m eclipsetools.cli --help
 ```
-
-The script caches many operations on disk to speed up processing.
-You can clear by removing the `.cache` directory.
 
 ## Tests
 
