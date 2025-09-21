@@ -1,5 +1,7 @@
 .idea/
 *.pyc
 output/
+*.egg-info
+dist/
 
 .claude/settings.local.json
