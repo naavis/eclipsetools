@@ -180,7 +180,7 @@ def foo(input_file: str):
     brightness = image[:, :, 1]
 
     # Define sector parameters
-    num_sectors = 30
+    num_sectors = 60
     sector_size = 360 / num_sectors
     max_distance = moon_params.radius
 
@@ -220,7 +220,7 @@ def foo(input_file: str):
 
         # Bin the data by distance and calculate mean brightness
         mean_brightness, _, _ = binned_statistic(
-            sector_distances, sector_brightness, statistic="mean", bins=distance_bins
+            sector_distances, sector_brightness, statistic="median", bins=distance_bins
         )
 
         results[sector, :] = mean_brightness
@@ -269,9 +269,19 @@ def foo(input_file: str):
     # Replace nan values in results with the minimum of the same row
     results = np.nan_to_num(results, nan=np.nanmin(results, axis=1, keepdims=True))
 
-    smoothed_data = smooth_polar_data(results, 10)
-    smoothed_data = gaussian_filter1d(smoothed_data, sigma=5, axis=1)
+    smoothed_data = smooth_polar_data(results, 5)
     smoothed_data -= np.nanmin(smoothed_data)
+
+    center_value = np.mean(smoothed_data[:, 0])
+    # Blend columns 0 to x% of width with zero
+    blend_end_col = int(0.1 * smoothed_data.shape[1])
+    # Create linear blend weights from 0 to 1
+    blend_weights = np.linspace(0, 1, blend_end_col)
+    # Apply blending to the specified columns
+    smoothed_data[:, :blend_end_col] *= blend_weights[np.newaxis, :]
+    smoothed_data[:, :blend_end_col] += center_value * (
+        1 - blend_weights[np.newaxis, :]
+    )
 
     sector_angles_rad = np.linspace(
         np.radians(sector_size / 2.0),
