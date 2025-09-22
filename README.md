@@ -2,7 +2,23 @@
 
 Toolkit for aligning and processing total solar eclipse photographs.
 
-## Setting up
+## Installation
+
+```bash
+pip install eclipsetools
+```
+
+## Usage
+
+```bash
+eclipsetools --help
+```
+
+## Development
+
+**TODO: Update development instructions**
+
+### Setting up
 
 Create and activate a conda environment using the provided `environment.yml` file. This file contains all the necessary
 dependencies for the project.
@@ -13,7 +29,7 @@ conda activate eclipsetools
 python -m eclipsetools.cli --help
 ```
 
-## Usage
+### Running in development
 
 Run the main script to see available commands and options:
 
@@ -21,7 +37,7 @@ Run the main script to see available commands and options:
 python -m eclipsetools.cli --help
 ```
 
-## Tests
+### Tests
 
 Execute:
 
