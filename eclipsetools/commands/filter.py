@@ -13,7 +13,9 @@ from eclipsetools.common.circle_finder import (
 )
 from eclipsetools.common.image_reader import open_image
 from eclipsetools.common.image_writer import save_tiff
-from eclipsetools.filtering import get_kernel_size, inpaint_pixels, partial_convolution
+from eclipsetools.filtering.convolution import partial_convolution
+from eclipsetools.filtering.inpainting import inpaint_pixels
+from eclipsetools.filtering.kernels import get_kernel_size
 
 
 @click.group("filter")
