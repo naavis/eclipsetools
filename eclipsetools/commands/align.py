@@ -520,7 +520,7 @@ def preprocess_only(
             total=len(images_to_preprocess),
             desc="Preprocessing images",
             unit="img",
-            iterable=Parallel(
+            iterable=joblib.Parallel(
                 n_jobs=n_jobs, prefer="threads", return_as="generator_unordered"
             )(
                 joblib.delayed(_open_and_preprocess)(
