@@ -1,0 +1,94 @@
+import cv2
+import numpy as np
+
+from eclipsetools.alignment.transform import find_transform
+from eclipsetools.common.image_reader import open_image
+from eclipsetools.preprocessing import workflows
+
+
+def test_align_parametrized(align_params):
+    """Individual test case for alignment with specific parameters."""
+    ref_image = open_image(r"tests\images\eclipse_5ms.CR3")
+    offset, rotation, scale = align_params
+
+    # Call the test function directly without joblib parallelization
+    error = _find_transform_error(ref_image, offset, rotation, scale)
+
+    scale_error, rotation_error, translation_error = error
+    assert scale_error < 0.02, f"Scale error too high: {scale_error}"
+    assert rotation_error < 0.3, f"Rotation error too high: {rotation_error}"
+    assert translation_error < 1.0, f"Translation error too high: {translation_error}"
+
+
+def _find_transform_error(
+    ref_image: np.ndarray,
+    offset: np.ndarray,
+    rotation: float,
+    scale: float,
+) -> tuple[float, float, float]:
+    # We crop images to avoid artifacts at the edges that can occur due to the affine transformation
+    crop_margin = 500
+    # Cropping has to be done before preprocessing to avoid artifacts at the edges
+    ref_image_preproc = workflows.preprocess_with_auto_mask(
+        ref_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :],
+        1.2,
+        2.0,
+        0,
+        400,
+        600,
+    )
+
+    test_image = _transform_image(ref_image, offset, rotation, scale)
+
+    preproc_image = workflows.preprocess_with_auto_mask(
+        test_image[crop_margin:-crop_margin, crop_margin:-crop_margin, :],
+        1.2,
+        2.0,
+        0,
+        400,
+        600,
+    )
+
+    recovered_scale, recovered_rotation, recovered_translation = find_transform(
+        ref_image_preproc, preproc_image, 0.2
+    )
+    scale_error = float(abs(1.0 - recovered_scale / scale))
+    rotation_error = float(abs(rotation - recovered_rotation))
+    translation_error = float(
+        np.sqrt(np.sum(np.square(recovered_translation - offset)))
+    )
+    return scale_error, rotation_error, translation_error
+
+
+def _transform_image(image, translation, rotation, scale):
+    translate_y, translate_x = translation
+
+    translation_matrix = np.array(
+        [[1, 0, translate_x], [0, 1, translate_y], [0, 0, 1]], dtype=np.float32
+    )
+
+    # Get image center
+    center = (image.shape[1] // 2, image.shape[0] // 2)
+
+    # Create rotation matrix around center with scaling
+    transform_matrix = np.vstack(
+        (
+            cv2.getRotationMatrix2D(center=center, angle=rotation, scale=scale),
+            [0, 0, 1],
+        ),
+        dtype=np.float32,
+    )
+
+    # Create affine matrix that translates first, then rotates and scales
+    matrix = (transform_matrix @ translation_matrix)[:2, :]
+
+    transformed_image = cv2.warpAffine(
+        image,
+        matrix,
+        dsize=(image.shape[1], image.shape[0]),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=[0, 0, 0],
+    ).astype(np.float32)
+
+    return transformed_image
