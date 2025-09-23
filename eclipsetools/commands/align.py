@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 from tqdm import tqdm
 
-from eclipsetools.alignment import find_transform
+from eclipsetools.alignment.transform import find_transform
 from eclipsetools.common.circle_finder import find_circle, DetectedCircle
 from eclipsetools.common.image_reader import open_image
 from eclipsetools.common.image_writer import save_tiff
