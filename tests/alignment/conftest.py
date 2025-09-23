@@ -8,11 +8,9 @@ def pytest_generate_tests(metafunc):
     """Generate test cases for test_align_parametrized and test_translate_parametrized functions."""
     # Generate parameters for test_align_parametrized
     if "align_params" in metafunc.fixturenames:
-        # Use the same random number generator as in the original test
         rng = np.random.default_rng(TEST_SEED)
         num_tests = 10
 
-        # Generate the same test parameters as in the original test
         offsets = rng.uniform(-20.0, 20.0, (num_tests, 2))
         rotations = rng.uniform(-85.0, 85.0, num_tests)
         scales = rng.uniform(0.8, 1.2, num_tests)
@@ -34,7 +32,6 @@ def pytest_generate_tests(metafunc):
         rng = np.random.default_rng(TEST_SEED)
         num_tests = 10
 
-        # Generate the same offsets as in the original test_translate
         offsets = rng.uniform(-40.0, 40.0, (num_tests, 2))
 
         # Create a list of test cases with IDs
