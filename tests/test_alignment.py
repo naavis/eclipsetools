@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 
-from eclipsetools.alignment import find_translation, find_transform
+from eclipsetools.alignment.transform import find_transform
+from eclipsetools.alignment.translation import find_translation
 from eclipsetools.common.image_reader import open_image
 from eclipsetools.preprocessing import workflows
 
