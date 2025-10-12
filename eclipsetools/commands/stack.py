@@ -27,7 +27,7 @@ def stack_group():
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(
     "--output-file",
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     default="average_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )
@@ -70,7 +70,7 @@ def average(images_to_stack: list[str], output_file: str):
 )
 @click.option(
     "--output-file",
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     default="hdr_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
 )

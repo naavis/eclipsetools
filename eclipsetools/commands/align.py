@@ -26,12 +26,12 @@ def align_group():
 
 
 @align_group.command("corona")
-@click.argument("reference_image", type=click.Path(exists=True))
+@click.argument("reference_image", type=click.Path(exists=True, dir_okay=False))
 @click.argument("images_to_align", nargs=-1, required=True)
 @click.option(
     "--output-dir",
     default="output",
-    type=click.Path(exists=False),
+    type=click.Path(file_okay=False),
     help="Directory to save preprocessed images.",
 )
 @click.option(
@@ -322,7 +322,7 @@ def _get_transform_matrix(
 
 
 @align_group.command("moon")
-@click.argument("reference_image", type=click.Path(exists=True))
+@click.argument("reference_image", type=click.Path(exists=True, dir_okay=False))
 @click.argument("images_to_align", nargs=-1, required=True)
 @click.option(
     "--moon-min-radius",
@@ -339,7 +339,7 @@ def _get_transform_matrix(
 @click.option(
     "--output-dir",
     default="output",
-    type=click.Path(exists=False),
+    type=click.Path(file_okay=False),
     help="Directory to save preprocessed images.",
 )
 @click.option(
@@ -445,7 +445,7 @@ def _align_single_image_by_moon(
 @click.option(
     "--output-dir",
     default="output",
-    type=click.Path(exists=False),
+    type=click.Path(file_okay=False),
     help="Directory to save preprocessed images.",
 )
 @click.option(

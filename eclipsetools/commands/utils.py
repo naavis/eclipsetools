@@ -17,9 +17,7 @@ def utils_group():
 
 
 @utils_group.command()
-@click.argument(
-    "image_path", type=click.Path(exists=True, dir_okay=False, readable=True)
-)
+@click.argument("image_path", type=click.Path(exists=True, dir_okay=False))
 @click.option("--min-radius", default=400, help="Minimum radius of the moon in pixels.")
 @click.option("--max-radius", default=600, help="Maximum radius of the moon in pixels.")
 @click.option(
@@ -77,8 +75,8 @@ def create_moon_mask(
 
 
 @utils_group.command()
-@click.argument("input_file", type=click.Path(exists=True))
-@click.argument("output_file", type=click.Path())
+@click.argument("input_file", type=click.Path(exists=True, dir_okay=False))
+@click.argument("output_file", type=click.Path(dir_okay=False))
 @click.argument("amount", type=float)
 def log_stretch(input_file: str, output_file: str, amount: float):
     """
@@ -94,8 +92,8 @@ def log_stretch(input_file: str, output_file: str, amount: float):
 
 
 @utils_group.command()
-@click.argument("input_file", type=click.Path(exists=True))
-@click.argument("output_file", type=click.Path())
+@click.argument("input_file", type=click.Path(exists=True, dir_okay=False))
+@click.argument("output_file", type=click.Path(dir_okay=False))
 def color_calibrate(input_file: str, output_file: str):
     """
     Color calibrate image.

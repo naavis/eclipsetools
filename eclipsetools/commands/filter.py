@@ -25,7 +25,7 @@ def filter_group():
 
 
 @filter_group.command()
-@click.argument("input_file", type=click.Path(exists=True))
+@click.argument("input_file", type=click.Path(exists=True, dir_okay=False))
 @click.option(
     "--sigma",
     type=float,
@@ -47,10 +47,14 @@ def filter_group():
     help="Amount of unsharp masking to apply.",
     required=True,
 )
-@click.option("--mask-path", type=click.Path(exists=True), help="Path to mask image.")
+@click.option(
+    "--mask-path",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to mask image.",
+)
 @click.option(
     "--output-file",
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     default="unsharp_masked_image.tiff",
     help="Output filename for the filtered image tiff file.",
 )
@@ -120,7 +124,7 @@ def unsharp_mask(
 
 
 @filter_group.command()
-@click.argument("input_file", type=click.Path(exists=True))
+@click.argument("input_file", type=click.Path(exists=True, dir_okay=False))
 @click.option(
     "--filter-params",
     "-f",
@@ -128,10 +132,14 @@ def unsharp_mask(
     multiple=True,
     help='Convolution kernel sigma and filter amount pairs, e.g. "1.0 100.0"',
 )
-@click.option("--mask-path", type=click.Path(exists=True), help="Path to mask image.")
+@click.option(
+    "--mask-path",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to mask image.",
+)
 @click.option(
     "--output-file",
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     default="achf_image.tiff",
     help="Output filename for the filtered image tiff file.",
 )
