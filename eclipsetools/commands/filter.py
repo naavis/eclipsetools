@@ -53,7 +53,8 @@ def filter_group():
     help="Path to mask image.",
 )
 @click.option(
-    "--output-file",
+    "--output",
+    "output_file",
     type=click.Path(dir_okay=False),
     default="unsharp_masked_image.tiff",
     help="Output filename for the filtered image tiff file.",
@@ -138,7 +139,8 @@ def unsharp_mask(
     help="Path to mask image.",
 )
 @click.option(
-    "--output-file",
+    "--output",
+    "output_file",
     type=click.Path(dir_okay=False),
     default="achf_image.tiff",
     help="Output filename for the filtered image tiff file.",

@@ -29,7 +29,8 @@ def align_group():
 @click.argument("reference_image", type=click.Path(exists=True, dir_okay=False))
 @click.argument("images_to_align", nargs=-1, required=True)
 @click.option(
-    "--output-dir",
+    "--output",
+    "output_dir",
     default="output",
     type=click.Path(file_okay=False),
     help="Directory to save preprocessed images.",
@@ -337,7 +338,8 @@ def _get_transform_matrix(
     help="Maximum moon radius in pixels for moon detection.",
 )
 @click.option(
-    "--output-dir",
+    "--output",
+    "output_dir",
     default="output",
     type=click.Path(file_okay=False),
     help="Directory to save preprocessed images.",
@@ -443,7 +445,8 @@ def _align_single_image_by_moon(
     help="Number of parallel jobs. Default is -1 (all CPUs).",
 )
 @click.option(
-    "--output-dir",
+    "--output",
+    "output_dir",
     default="output",
     type=click.Path(file_okay=False),
     help="Directory to save preprocessed images.",

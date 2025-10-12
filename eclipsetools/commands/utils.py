@@ -46,7 +46,9 @@ def find_moon(image_path: str, min_radius: int, max_radius: int, plot_circle: bo
 
 @utils_group.command()
 @click.argument("image_path", type=click.Path(exists=True, dir_okay=False))
-@click.argument("output_file", type=click.Path(dir_okay=False))
+@click.option(
+    "--output", "output_file", default="moon_mask.tiff", type=click.Path(dir_okay=False)
+)
 @click.option(
     "--min-moon-radius",
     type=int,
@@ -76,8 +78,13 @@ def create_moon_mask(
 
 @utils_group.command()
 @click.argument("input_file", type=click.Path(exists=True, dir_okay=False))
-@click.argument("output_file", type=click.Path(dir_okay=False))
 @click.argument("amount", type=float)
+@click.option(
+    "--output",
+    "output_file",
+    default="log_stretched_image.tiff",
+    type=click.Path(dir_okay=False),
+)
 def log_stretch(input_file: str, output_file: str, amount: float):
     """
     Apply logarithmic stretch to an image.
@@ -93,7 +100,12 @@ def log_stretch(input_file: str, output_file: str, amount: float):
 
 @utils_group.command()
 @click.argument("input_file", type=click.Path(exists=True, dir_okay=False))
-@click.argument("output_file", type=click.Path(dir_okay=False))
+@click.option(
+    "--output",
+    "output_file",
+    "color_calibrated_image.tiff",
+    type=click.Path(dir_okay=False),
+)
 def color_calibrate(input_file: str, output_file: str):
     """
     Color calibrate image.

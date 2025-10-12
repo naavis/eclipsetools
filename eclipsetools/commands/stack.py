@@ -26,7 +26,8 @@ def stack_group():
 @stack_group.command()
 @click.argument("images_to_stack", nargs=-1, required=True)
 @click.option(
-    "--output-file",
+    "--output",
+    "output_file",
     type=click.Path(dir_okay=False),
     default="average_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
@@ -69,7 +70,8 @@ def average(images_to_stack: list[str], output_file: str):
     "This option might improve fit quality for uncalibrated images.",
 )
 @click.option(
-    "--output-file",
+    "--output",
+    "output_file",
     type=click.Path(dir_okay=False),
     default="hdr_stacked_image.tiff",
     help="Output filename for the stacked image tiff file.",
