@@ -50,19 +50,19 @@ def find_moon(image_path: str, min_radius: int, max_radius: int, plot_circle: bo
     "--output", "output_file", default="moon_mask.tiff", type=click.Path(dir_okay=False)
 )
 @click.option(
-    "--min-moon-radius",
+    "--moon-min-radius",
     type=int,
     default=400,
     help="Minimum radius of the moon in pixels for mask creation.",
 )
 @click.option(
-    "--max-moon-radius",
+    "--moon-max-radius",
     type=int,
     default=2000,
     help="Maximum radius of the moon in pixels for mask creation.",
 )
 def create_moon_mask(
-    image_path: str, output_file: str, min_moon_radius: int, max_moon_radius: int
+    image_path: str, output_file: str, moon_min_radius: int, moon_max_radius: int
 ):
     """
     Create a precise moon mask from an image. The sky will have the value 1.0 and the moon 0.0.
@@ -70,7 +70,7 @@ def create_moon_mask(
     """
     image = open_image(image_path)
 
-    moon_mask = get_precise_moon_mask(image, min_moon_radius, max_moon_radius)
+    moon_mask = get_precise_moon_mask(image, moon_min_radius, moon_max_radius)
 
     click.echo(f"Saving mask to {output_file}")
     save_tiff(moon_mask, output_file)
