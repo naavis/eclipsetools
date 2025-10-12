@@ -103,7 +103,7 @@ def unsharp_mask(
         click.echo("Finding moon in the image")
         moon_mask = get_binary_moon_mask(image_l.shape, moon_params, 1.005)
 
-    convolved_image = convolve_with_infill(
+    convolved_image = _convolve_with_infill(
         image_l, moon_mask, moon_params, sigma_radial, sigma_tangent
     )
 
@@ -205,7 +205,7 @@ def achf(
         )
         filtered_image += filter_amount * (
             image_l
-            - convolve_with_infill(
+            - _convolve_with_infill(
                 image_l, moon_mask, moon_params, filter_radius, filter_radius
             )
         )
@@ -228,7 +228,7 @@ def achf(
     save_tiff(processed_rgb, output_file, embed_srgb=True)
 
 
-def convolve_with_infill(
+def _convolve_with_infill(
     image: np.ndarray,
     mask: np.ndarray,
     moon_params: DetectedCircle,

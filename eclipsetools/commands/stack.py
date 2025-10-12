@@ -114,7 +114,7 @@ def hdr(
         )
         return
 
-    image_pairs = form_image_pairs(images_to_stack, n_jobs)
+    image_pairs = _form_image_pairs(images_to_stack, n_jobs)
 
     # Size of the moon mask relative to the moon radius for linear fitting
     linear_fit_mask_size = 1.01
@@ -194,7 +194,7 @@ def hdr(
     save_tiff(stacked_image, output_file)
 
 
-def form_image_pairs(images_to_stack, n_jobs, show_progress=True):
+def _form_image_pairs(images_to_stack, n_jobs, show_progress=True):
     # Sort images by brightness
     sorted_images = [
         path
