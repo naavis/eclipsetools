@@ -16,6 +16,7 @@ from eclipsetools.common.image_writer import save_tiff
 from eclipsetools.filtering.convolution import partial_convolution
 from eclipsetools.filtering.inpainting import inpaint_pixels
 from eclipsetools.filtering.kernels import get_kernel_size
+from eclipsetools.validation.sigma_validator import validate_sigma_parameters
 
 
 @click.group("filter")
@@ -276,23 +277,3 @@ def _convolve_with_infill(
 
     convolved_image = np.where(mask, convolved_image, image)
     return convolved_image
-
-
-def validate_sigma_parameters(
-    sigma: float, sigma_tangent: float, sigma_radial: float
-) -> None:
-    """
-    Validate the sigma parameters for the unsharp mask command.
-    You must provide either a single --sigma value or both --sigma-tangent and --sigma-radial.
-
-    :raises click.BadParameter: If the parameters are not valid.
-    """
-    s = sigma is not None
-    st = sigma_tangent is not None
-    sr = sigma_radial is not None
-    if (s and not (st or sr)) or (not s and (st and sr)):
-        return
-
-    raise click.BadParameter(
-        "You must provide either a single sigma value or both --sigma-tangent and --sigma-radial"
-    )
