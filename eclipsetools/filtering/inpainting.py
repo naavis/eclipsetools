@@ -11,7 +11,15 @@ def inpaint_pixels(
     kernel_size: int,
     progress_proxy: ProgressBar,
 ) -> np.ndarray:
-    # TODO: Write documentation for this function
+    """
+    Inpaint pixels in the image where infill_mask is True by fitting a plane to the surrounding unmasked pixels.
+    :param image: 2D array of image values
+    :param infill_mask: 2D boolean array where True = pixel to inpaint
+    :param image_mask: 2D boolean array where True = unmasked pixel
+    :param kernel_size: Size of the square kernel to consider around each pixel
+    :param progress_proxy: ProgressBar instance to update progress
+    :return: Inpainted image as a 2D array
+    """
     result = image.copy()
     half_kernel = kernel_size // 2
     for i in range(image.shape[0]):

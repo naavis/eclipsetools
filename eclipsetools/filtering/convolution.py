@@ -12,7 +12,16 @@ def partial_convolution(
     sigma_radial: float,
     center: tuple[float, float],
 ) -> np.ndarray:
-    # TODO: Write documentation for this function
+    """
+    Perform partial convolution on the image using an adaptive Gaussian kernel defined in polar coordinates.
+    The convolution is only applied to pixels where the mask is True. Masked pixels remain unchanged.
+    :param image: 2D array of image values
+    :param mask: 2D boolean array where True = pixel to convolve, False = pixel to leave unchanged
+    :param sigma_tangent: Gaussian convolution kernel sigma in the tangential direction (along circles centered at 'center')
+    :param sigma_radial: Gaussian convolution kernel sigma in the radial direction (along rays from 'center')
+    :param center: (cy, cx) pixel coordinates of the center for polar coordinate transformation
+    :return: Partially convolved image as a 2D array
+    """
     kernel_size = get_kernel_size(sigma_tangent, sigma_radial)
     padding = kernel_size // 2
 
@@ -78,7 +87,6 @@ def _partial_convolution_loop(
     sigma_radial: float,
     progress_proxy: ProgressBar,
 ) -> np.ndarray:
-    # TODO: Write documentation for this function
     half_kernel = kernel_size // 2
 
     padding = (padded_image.shape[0] - image.shape[0]) // 2

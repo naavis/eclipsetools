@@ -3,26 +3,33 @@ import numpy as np
 from eclipsetools.preprocessing.masking import hann_window_mask
 
 
-# TODO: Change low pass sigma parameter units so they better match Druckmüller's and Druckmüllerova's papers
 def find_translation(ref_image, image, low_pass_sigma) -> np.ndarray:
     """
     Find the translation between two images using phase correlation.
     :param ref_image: Reference image to align against
     :param image: Image to be aligned
-    :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain.
-        The larger the value, the more accurate the results are. But after a certain point, the accuracy collapses,
-        and the reported translation is close to zero.
-    :return: Translation vector (dy, dx) indicating how much the second image is shifted relative to the first.
+    :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain. The lower the value,
+                           the stronger the low-pass filtering. If None, no low-pass filtering is applied.
+    :return: Translation vector (dy, dx) indicating how much to shift image to align it with ref_image
     """
     return -np.array(phase_correlate_with_low_pass(ref_image, image, low_pass_sigma))
 
 
-# TODO: Document this function
 def phase_correlate_with_low_pass(
     img_a: np.ndarray,
     img_b: np.ndarray,
-    low_pass_sigma: float = None,
+    low_pass_sigma: float | None = None,
 ) -> np.ndarray:
+    """
+    Phase correlate two images with optional low-pass filtering in the frequency domain. This method was suggested
+    by Druckmüller and Druckmüllerová. The correlation peak is further refined by calculating the center of mass
+    in a 5x5 window around the initial peak.
+    :param img_a: First image
+    :param img_b: Second image
+    :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain. The lower the value,
+                           the stronger the low-pass filtering. If None, no low-pass filtering is applied.
+    :return: Translation vector (dy, dx) indicating how much the second image is shifted relative to the first.
+    """
     assert img_a.shape == img_b.shape
 
     window = hann_window_mask(img_a.shape)
