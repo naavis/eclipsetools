@@ -1,5 +1,5 @@
 [project]
-name = "eclipsetools"
+name = "solar-eclipse-toolkit"
 version = "0.9.0"
 authors = [
     { name = "Samuli Vuorinen", email = "samuli.vuorinen@iki.fi" }
