@@ -84,7 +84,7 @@ def unsharp_mask(
     moon_max_radius: int,
 ):
     """
-    Process image with an adaptive unsharp mask filter.
+    Apply an adaptive unsharp mask filter.
     The filter uses partial convolution and a spatially varying convolution kernel.
     """
 
@@ -143,7 +143,7 @@ def unsharp_mask(
     "--output",
     "output_file",
     type=click.Path(dir_okay=False),
-    default="achf_image.tiff",
+    default="multi_unsharp_image.tiff",
     help="Output filename for the filtered image tiff file.",
 )
 @click.option(
@@ -158,7 +158,7 @@ def unsharp_mask(
     default=2000,
     help="Maximum radius of the moon in pixels for moon detection.",
 )
-def achf(
+def multi_unsharp_mask(
     input_file: str,
     filter_params: tuple[tuple[float, float], ...] | None,
     output_file: str,
@@ -167,9 +167,15 @@ def achf(
     moon_max_radius: int,
 ):
     """
-    Apply the Adaptive Circular High-Frequency filter (ACHF) to the image.
-    The filter combines several unsharp masks with different parameters to enhance the image,
-    using partial convolution to avoid ringing artifacts around the moon.
+    Apply multiple adaptive unsharp mask filters.
+
+    This technique is inspired by Druckmüller's Adaptive Circular High-Frequency filter (ACHF).
+    The filter combines several unsharp masks with varying radii and amounts to enhance fine details while preserving
+    the overall structure. The technique uses partial convolution and inpainting to minimize ringing artifacts around
+    the moon.
+
+    The default parameters provide a good starting point for eclipse corona enhancement, applying progressively larger
+    filters with decreasing intensity.
     """
     if not filter_params:
         filter_params = [
