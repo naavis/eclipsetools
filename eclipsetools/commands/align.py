@@ -237,7 +237,7 @@ def _align_single_image_by_corona(
     transform_matrix = _get_transform_matrix(
         1.0 / scale,
         -rotation_degrees,
-        (rgb_image.shape[0] / 2, rgb_image.shape[1] / 2),
+        (rgb_image.shape[1] // 2, rgb_image.shape[0] // 2),
         (-translation_y, -translation_x),
     )
     aligned_image = cv2.warpAffine(
