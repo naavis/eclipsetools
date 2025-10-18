@@ -66,8 +66,7 @@ def average(images_to_stack: list[str], output_file: str):
     "--fit-intercept",
     is_flag=True,
     default=False,
-    help="Fit the intercept in the linear regression. If not set, the linear fit is forced through the origin."
-    "This option might improve fit quality for uncalibrated images.",
+    help="Fit the intercept in the linear regression. If not set, the linear fit is forced through the origin. This option might improve fit quality for uncalibrated images.",
 )
 @click.option(
     "--output",
