@@ -103,7 +103,7 @@ def log_stretch(input_file: str, output_file: str, amount: float):
 @click.option(
     "--output",
     "output_file",
-    "color_calibrated_image.tiff",
+    default="color_calibrated_image.tiff",
     type=click.Path(dir_okay=False),
 )
 def color_calibrate(input_file: str, output_file: str):
