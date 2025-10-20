@@ -157,9 +157,7 @@ def hdr(
 
     # Process images in parallel for stacking
     for image in tqdm(
-        iterable=joblib.Parallel(
-            n_jobs=n_jobs, prefer="threads", return_as="generator_unordered"
-        )(
+        iterable=joblib.Parallel(n_jobs=n_jobs, return_as="generator_unordered")(
             joblib.delayed(_process_image_for_stacking)(
                 image_path,
                 linear_fits[image_path],
