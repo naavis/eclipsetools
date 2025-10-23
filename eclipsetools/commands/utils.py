@@ -67,6 +67,7 @@ def create_moon_mask(
     """
     Create a precise moon mask from an image. The sky will have the value 1.0 and the moon 0.0.
     This command should only be used with linear images.
+    Not guaranteed to work nicely when there are bright prominences on the moon limb.
     """
     image = open_image(image_path)
 

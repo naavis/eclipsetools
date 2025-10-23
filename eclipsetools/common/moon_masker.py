@@ -20,7 +20,7 @@ def get_precise_moon_mask(
 
     # Lower and upper limits for the polar transformation radius
     polar_min_radius = 0.95
-    polar_max_radius = 1.05
+    polar_max_radius = 1.10
     polar_img = cv2.warpPolar(
         image,
         (image.shape[1], image.shape[0]),
