@@ -23,7 +23,7 @@ def find_transform(
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain when finding translation.
     :param allow_scale: Allow estimating scale. If False, scale is assumed to be 1.0.
     :return: Tuple containing (scale, rotation_angle_degrees, (dy, dx))
-             where dy, dx is the translation vector
+             where dy, dx is the translation vector from the reference image to the aligned image.
     """
 
     ref_image_pad = _pad_with_zeros(ref_image)
