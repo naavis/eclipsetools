@@ -44,11 +44,11 @@ def find_transform(
     )
 
     # Recover rotation from the correlation result
-    rotation_degrees = 360.0 * shift_y / ref_fft_log_polar.shape[0]
+    rotation_degrees = -360.0 * shift_y / ref_fft_log_polar.shape[0]
 
     # Recover scale from the correlation result
     k_log = radius / np.log(radius)
-    scale = np.exp(shift_x / k_log) if allow_scale else 1.0
+    scale = np.exp(-shift_x / k_log) if allow_scale else 1.0
 
     # Step 2: Apply scale and rotation to the image
     rotate_scale_matrix = cv2.getRotationMatrix2D(
@@ -67,7 +67,7 @@ def find_transform(
     ).astype(np.float32)
 
     # Step 3: Find translation between reference and transformed image
-    translation_y, translation_x = -phase_correlate_with_low_pass(
+    translation_y, translation_x = phase_correlate_with_low_pass(
         ref_image_pad, translated_image, low_pass_sigma
     )
 
