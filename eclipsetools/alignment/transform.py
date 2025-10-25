@@ -1,10 +1,7 @@
 import cv2
 import numpy as np
 
-from eclipsetools.alignment.translation import (
-    phase_correlate_with_low_pass,
-    find_translation,
-)
+from eclipsetools.alignment.phase_correlation import phase_correlate_with_low_pass
 
 
 def find_transform(
@@ -70,7 +67,7 @@ def find_transform(
     ).astype(np.float32)
 
     # Step 3: Find translation between reference and transformed image
-    translation_y, translation_x = find_translation(
+    translation_y, translation_x = -phase_correlate_with_low_pass(
         ref_image_pad, translated_image, low_pass_sigma
     )
 
