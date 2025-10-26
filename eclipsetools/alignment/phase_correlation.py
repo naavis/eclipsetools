@@ -1,3 +1,5 @@
+import functools
+
 import numpy as np
 
 from eclipsetools.preprocessing.masking import hann_window_mask
@@ -54,6 +56,7 @@ def phase_correlate_with_low_pass(
     return np.array(img_a.shape) / 2 - subpixel_peak
 
 
+@functools.cache
 def _gaussian_weights(sigma: float, image_shape: tuple) -> np.ndarray:
     fy = np.fft.rfftfreq(image_shape[1])
     fx = np.fft.fftfreq(image_shape[0])

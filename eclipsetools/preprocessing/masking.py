@@ -1,3 +1,4 @@
+import functools
 from enum import StrEnum
 
 import cv2
@@ -29,6 +30,7 @@ def annulus_mask(
     return mask
 
 
+@functools.cache
 def hann_window_mask(shape: tuple) -> np.ndarray:
     assert len(shape) == 2, "Shape must be a 2D tuple (height, width)."
     return cv2.createHanningWindow(shape[::-1], cv2.CV_32F)
