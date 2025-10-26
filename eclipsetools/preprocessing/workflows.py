@@ -35,7 +35,7 @@ def preprocess_with_auto_mask(
         filtered_image.shape,
         (moon.center[0] - crop, moon.center[1] - crop),
         mask_inner_radius_px,
-        mask_outer_radius_px - crop,
+        (mask_outer_radius_px - crop) if mask_outer_radius_px else None,
     )
     return masked_image
 
