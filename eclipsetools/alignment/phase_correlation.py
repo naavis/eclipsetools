@@ -21,14 +21,17 @@ def phase_correlate_with_low_pass(
     assert img_a.shape == img_b.shape
 
     window = hann_window_mask(img_a.shape)
+
     img_a_win = window * img_a
+    img_a_win -= img_a_win.mean()
+    img_a_win /= img_a_win.std()
+
     img_b_win = window * img_b
+    img_b_win -= img_b_win.mean()
+    img_b_win /= img_b_win.std()
 
-    img_a_norm = (img_a_win - img_a_win.mean()) / img_a_win.std()
-    img_b_norm = (img_b_win - img_b_win.mean()) / img_b_win.std()
-
-    fft1 = np.fft.rfft2(img_a_norm)
-    fft2 = np.fft.rfft2(img_b_norm)
+    fft1 = np.fft.rfft2(img_a_win)
+    fft2 = np.fft.rfft2(img_b_win)
 
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = (
@@ -36,13 +39,9 @@ def phase_correlate_with_low_pass(
     )
 
     if low_pass_sigma:
-        gaussian_weighting = _gaussian_weights(low_pass_sigma, img_a.shape)
-        phase_correlation = np.abs(
-            np.fft.irfft2(gaussian_weighting * cross_power_spectrum, s=img_a.shape)
-        )
-    else:
-        phase_correlation = np.abs(np.fft.irfft2(cross_power_spectrum, s=img_a.shape))
+        cross_power_spectrum *= _gaussian_weights(low_pass_sigma, img_a.shape)
 
+    phase_correlation = np.abs(np.fft.irfft2(cross_power_spectrum, s=img_a.shape))
     phase_correlation = np.fft.ifftshift(phase_correlation)
 
     initial_peak = np.unravel_index(np.argmax(phase_correlation), img_a.shape)
