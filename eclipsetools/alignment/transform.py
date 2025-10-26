@@ -5,10 +5,10 @@ from eclipsetools.alignment.phase_correlation import phase_correlate_with_low_pa
 
 
 def find_transform(
-    ref_image,
-    image,
-    low_pass_sigma,
-    allow_scale: bool = True,
+    ref_image: np.ndarray,
+    image: np.ndarray,
+    low_pass_sigma: float,
+    allow_scale: bool,
 ) -> tuple[float, float, tuple[float, float]]:
     """
     Find the scale, rotation, and translation between two images.

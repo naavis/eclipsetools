@@ -76,7 +76,7 @@ def _find_transform_error(
     )
 
     recovered_scale, recovered_rotation, recovered_translation = find_transform(
-        ref_image_preproc, preproc_image, 0.2
+        ref_image_preproc, preproc_image, 0.2, allow_scale=True
     )
     scale_error = float(abs(1.0 - recovered_scale / scale))
     rotation_error = float(abs(rotation - recovered_rotation))

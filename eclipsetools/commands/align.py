@@ -48,6 +48,11 @@ def align_group():
     help="Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.",
 )
 @click.option(
+    "--allow-scale",
+    is_flag=True,
+    help="If set, allows scale changes during alignment. Scale changes are not expected in eclipse images, and this is not guaranteed to work that well.",
+)
+@click.option(
     "--mask-mode",
     type=click.Choice(MaskMode),
     default=MaskMode.AUTO_PER_IMAGE,
@@ -96,6 +101,7 @@ def align_by_corona(
     output_dir: str,
     n_jobs: int,
     low_pass_sigma: float,
+    allow_scale: bool,
     mask_mode: MaskMode,
     mask_inner_radius: float,
     mask_outer_radius: float,
@@ -158,6 +164,7 @@ def align_by_corona(
                     ref_image,
                     image_path,
                     low_pass_sigma,
+                    allow_scale,
                     output_dir_abs,
                     mask_inner_radius,
                     mask_outer_radius,
@@ -186,6 +193,7 @@ def _align_single_image_by_corona(
     reference_image: np.ndarray,
     image_path: str,
     low_pass_sigma: float,
+    allow_scale: bool,
     output_dir: str,
     mask_inner_radius: float,
     mask_outer_radius: float,
@@ -201,6 +209,7 @@ def _align_single_image_by_corona(
     :param reference_image: Preprocessed reference image data
     :param image_path: Path to the image file to align
     :param low_pass_sigma: Standard deviation for Gaussian low-pass filter in frequency domain applied to the phase correlation.
+    :param allow_scale: Whether to allow scale changes during alignment
     :param mask_inner_radius: Inner radius of the annulus mask in multiples of the moon radius.
     :param mask_outer_radius: Outer radius of the annulus mask in multiples of the inner radius. Set to -1 to only mask the moon.
     :param mask_inner_radius_px: Inner radius of the annulus mask in pixels. If None, use the auto mask.
@@ -229,9 +238,8 @@ def _align_single_image_by_corona(
             moon_min_radius,
             moon_max_radius,
         )
-    # TODO: Parametrize scale difference allowance
     scale, rotation_degrees, (translation_y, translation_x) = find_transform(
-        reference_image, image_to_align, low_pass_sigma, allow_scale=False
+        reference_image, image_to_align, low_pass_sigma, allow_scale
     )
 
     transform_matrix = _get_transform_matrix(
