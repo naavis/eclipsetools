@@ -54,7 +54,7 @@ def phase_correlate_with_low_pass(
         5,
     )
 
-    return np.array(img_a.shape) // 2 - subpixel_peak
+    return np.array(img_a.shape) / 2 - subpixel_peak
 
 
 def _gaussian_weights(shape: tuple, sigma: float) -> np.ndarray:
