@@ -268,20 +268,20 @@ def _align_single_image_by_corona(
     save_tiff(aligned_image, output_filename)
 
     if save_preprocessed_post_alignment_images:
-        # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
-        preproc_norm = np.clip(
-            (image_to_align - image_to_align.mean()) / image_to_align.std() + 0.5,
-            0.0,
-            1.0,
-            dtype=np.float32,
-        )
         aligned_preproc = cv2.warpAffine(
-            preproc_norm,
+            image_to_align,
             transform_matrix,
-            (preproc_norm.shape[1], preproc_norm.shape[0]),
+            (image_to_align.shape[1], image_to_align.shape[0]),
             flags=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_CONSTANT,
             borderValue=(0, 0, 0),
+        )
+        # Normalize the image to have mean 0 and std 1, then shift to have mean 0.5, so it is easier to view in an external program
+        aligned_preproc = np.clip(
+            (aligned_preproc - aligned_preproc.mean()) / aligned_preproc.std() + 0.5,
+            0.0,
+            1.0,
+            dtype=np.float32,
         )
         preproc_aligned_filename = os.path.join(
             output_dir, f"{orig_filename_without_ext}_aligned_preproc.tiff"
