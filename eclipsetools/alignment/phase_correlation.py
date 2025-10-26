@@ -27,8 +27,8 @@ def phase_correlate_with_low_pass(
     img_a_norm = (img_a_win - img_a_win.mean()) / img_a_win.std()
     img_b_norm = (img_b_win - img_b_win.mean()) / img_b_win.std()
 
-    fft1 = np.fft.fft2(img_a_norm)
-    fft2 = np.fft.fft2(img_b_norm)
+    fft1 = np.fft.rfft2(img_a_norm)
+    fft2 = np.fft.rfft2(img_b_norm)
 
     offset = 0.01 * np.max(np.abs(fft1))
     cross_power_spectrum = (
@@ -36,14 +36,12 @@ def phase_correlate_with_low_pass(
     )
 
     if low_pass_sigma:
-        gaussian_weighting = _gaussian_weights(
-            cross_power_spectrum.shape, low_pass_sigma
-        )
+        gaussian_weighting = _gaussian_weights(low_pass_sigma, img_a.shape)
         phase_correlation = np.abs(
-            np.fft.ifft2(gaussian_weighting * cross_power_spectrum)
+            np.fft.irfft2(gaussian_weighting * cross_power_spectrum, s=img_a.shape)
         )
     else:
-        phase_correlation = np.abs(np.fft.ifft2(cross_power_spectrum))
+        phase_correlation = np.abs(np.fft.irfft2(cross_power_spectrum, s=img_a.shape))
 
     phase_correlation = np.fft.ifftshift(phase_correlation)
 
@@ -57,9 +55,9 @@ def phase_correlate_with_low_pass(
     return np.array(img_a.shape) / 2 - subpixel_peak
 
 
-def _gaussian_weights(shape: tuple, sigma: float) -> np.ndarray:
-    fy = np.fft.fftfreq(shape[1])
-    fx = np.fft.fftfreq(shape[0])
+def _gaussian_weights(sigma: float, image_shape: tuple) -> np.ndarray:
+    fy = np.fft.rfftfreq(image_shape[1])
+    fx = np.fft.fftfreq(image_shape[0])
     fy_grid, fx_grid = np.meshgrid(fy, fx)
     freq_squared = fy_grid**2 + fx_grid**2
     gaussian_weighting = np.exp(-0.5 * freq_squared / (sigma**2), dtype=np.float32)
