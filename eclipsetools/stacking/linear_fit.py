@@ -16,6 +16,7 @@ def fit_eclipse_image_pair(
     moon_mask_size: float,
     moon_min_radius: int = 400,
     moon_max_radius: int = 600,
+    subsample_target: int = 1_000_000,
 ) -> tuple[str, str, tuple[float, float]]:
     """
     Fit linear relationship between two eclipse images.
@@ -26,6 +27,10 @@ def fit_eclipse_image_pair(
     :param moon_mask_size: Size of the moon mask relative to the moon radius
     :param moon_min_radius: Minimum radius of the moon to detect in pixels
     :param moon_max_radius: Maximum radius of the moon to detect in pixels
+    :param subsample_target: Approximate number of non-moon pixels to keep for the
+                             fit. The downstream fit only uses ~max_points, so the
+                             full set of non-moon pixels is subsampled to this many
+                             to avoid materializing two full-image-sized arrays.
     :return: Tuple of (image_path_a, image_path_b, (linear_coef, linear_intercept))
     """
     img_a = open_image(image_path_a)
@@ -43,8 +48,17 @@ def fit_eclipse_image_pair(
 
     # We linear fit only pixels that are not contaminated by the moon in either image.
     pixels_without_moon = moon_mask_a & moon_mask_b
-    img_a_points = img_a[pixels_without_moon, :].ravel()
-    img_b_points = img_b[pixels_without_moon, :].ravel()
+
+    # Subsample the non-moon pixels before extraction. Selecting every non-moon
+    # pixel would materialize two full-image-sized arrays per pair; instead we
+    # stride spatially so only ~subsample_target pixels are pulled out, which is
+    # still far more than the fit consumes. Striding the (H, W, 3) image is a view,
+    # so the full-size arrays are never allocated.
+    n_without_moon = int(pixels_without_moon.sum())
+    stride = max(int(np.sqrt(n_without_moon / subsample_target)), 1)
+    sub_mask = pixels_without_moon[::stride, ::stride]
+    img_a_points = img_a[::stride, ::stride][sub_mask, :].ravel()
+    img_b_points = img_b[::stride, ::stride][sub_mask, :].ravel()
 
     linear_coef, linear_intercept = _linear_fit(
         img_a_points, img_b_points, fit_intercept
