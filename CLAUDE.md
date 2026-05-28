@@ -15,14 +15,14 @@ Code is formatted with `black` (also pinned in `environment.yml`).
 
 ## Running
 
-The CLI entry point is `main.py`, a `click` group composed of four subgroups registered in `main.py`:
+The CLI is installed as the `eclipsetools` console script (declared in `pyproject.toml` under `[project.scripts]`), whose entry point is `main` in `eclipsetools/cli.py`. It is a `click` group composed of four subgroups registered in `eclipsetools/cli.py`:
 
 - `align` — register images against a reference (corona-based or moon-based).
 - `stack` — combine pre-aligned images (`average` for equal exposures, `hdr` for mixed exposures).
 - `filter` — adaptive unsharp masking (single or multi-scale).
 - `utils` — helpers: `find-moon`, `create-moon-mask`, `log-stretch`, `color-calibrate`.
 
-Use `python main.py <group> <command> --help` to discover options. Many commands accept `--n-jobs` (joblib parallelism, default `-1`) and `--moon-min-radius` / `--moon-max-radius` (Hough circle detection bounds in pixels).
+Use `eclipsetools <group> <command> --help` to discover options. Many commands accept `--n-jobs` (joblib parallelism, default `-1`) and `--moon-min-radius` / `--moon-max-radius` (Hough circle detection bounds in pixels).
 
 ## Tests
 
