@@ -67,7 +67,7 @@ Mask sizing supports two modes (`MaskMode.AUTO_PER_IMAGE` vs `MaskMode.MAX`): pe
 
 ### Performance notes
 
-- Parallelism is `joblib.Parallel` with `prefer="threads"` for I/O-bound stages (loading + simple processing) and process-based for CPU-heavy stacking composition.
+- Parallelism is `joblib.Parallel` with `prefer="threads"`
 - Hot kernel work in `filtering/` uses numba (`numba_progress.ProgressBar` for progress reporting).
 - `phase_correlation.py` and `preprocessing/masking.py` use `@functools.cache` for window/Gaussian-weight lookup — keep these functions' arguments hashable.
 - Phase correlation uses `rfft2`/`irfft2` (`phase_correlation.py`). Note it allocates fresh FFT arrays (`fft1`, `fft2`, `cross_power_spectrum`, the `irfft2` result) on every call — there is no buffer reuse, so each call has a large transient footprint that is multiplied by `n_jobs` when alignment runs in parallel threads.
