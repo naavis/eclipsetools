@@ -1,6 +1,7 @@
 [project]
 name = "solar-eclipse-toolkit"
 version = "0.9.0"
+description = "Toolkit for aligning, stacking, and filtering total solar eclipse photographs."
 authors = [
     { name = "Samuli Vuorinen", email = "samuli.vuorinen@iki.fi" }
 ]
