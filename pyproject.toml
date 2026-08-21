@@ -1,5 +1,5 @@
 [project]
-name = "solar-eclipse-toolkit"
+name = "tse-tools"
 version = "0.9.0"
 description = "Toolkit for aligning, stacking, and filtering total solar eclipse photographs."
 authors = [
@@ -52,11 +52,12 @@ Homepage = "https://github.com/naavis/eclipsetools/"
 Repository = "https://github.com/naavis/eclipsetools/"
 
 [project.scripts]
-eclipsetools = "eclipsetools.cli:main"
+tse-tools = "eclipsetools.cli:main"
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["eclipsetools*"]
